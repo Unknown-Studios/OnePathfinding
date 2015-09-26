@@ -14,8 +14,8 @@ It is developed by Unknown-Studios.
 
 #Information
 
-Twitter: http://twitter.com/unknownstudios8
+Twitter: http://twitter.com/unknownstudios8 <br />
 Mail: oneunknownstudio@gmail.com
 
-Check out the website for more info:
+Check out the website for more info: <br />
 http://www.unknown-studios.com#onepathfinding
