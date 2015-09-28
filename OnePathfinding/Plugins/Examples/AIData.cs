@@ -3,20 +3,29 @@ using UnityEngine;
 
 public class AIData : MonoBehaviour
 {
+    #region Fields
+
     public float Health = 100.0f;
 
     public Vector3 Home;
 
     public float Hunger = 100.0f;
+    public bool Respawn = true;
 
     private int Seconds;
 
+    #endregion Fields
+
+    #region Methods
+
     private void KillMe()
     {
-        if (GetComponent<AI>().PromoteNewLeader())
+        GetComponent<AI>().PromoteNewLeader();
+        if (Respawn)
         {
             AISpawner.Spawn(gameObject, 1);
         }
+
         Destroy(gameObject);
     }
 
@@ -57,4 +66,6 @@ public class AIData : MonoBehaviour
             KillMe();
         }
     }
+
+    #endregion Methods
 }

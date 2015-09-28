@@ -4,8 +4,11 @@ using UnityEngine;
 using Random = UnityEngine.Random;
 
 [RequireComponent(typeof(AIData))]
+[RequireComponent(typeof(AudioSource))]
 public class AI : MonoBehaviour
 {
+    #region Fields
+
     [HideInInspector]
     public GameObject _target;
 
@@ -24,50 +27,70 @@ public class AI : MonoBehaviour
 
     public int maxFlockSize = 3;
     public int minFlockSize = 2;
+    public float NoiseDistance = 100.0f;
     public bool RandomAddSpeed = true;
 
-    [HideInInspector]
     public float Size;
 
     public float SmellDistance = 5f;
     public float speed = 6.0F;
-    public float TargetAngle;
+    public float TillNoise;
     public AnimalType Type;
     public float ViewDistance = 50.0f;
     private bool _LockTarget = false;
     private float AttackRange = 2.5f;
+    private new AudioSource audio;
+    private float audioValue;
     private GameObject Closest;
     private Vector3 currentWay;
     private int currentWaypoint = 0;
     private AIData Data;
-    private GameObject f;
+
     private Vector3 flyTarget;
-    private string ID;
+    private float LastAttack;
     private float LastCheck = 0.0f;
     private Vector3 MasterPosition;
     private Path path = null;
+    private Vector3 pos;
     private float RandomSpeed;
     private float RefreshRate = 2f;
     private GameObject t;
 
+    #endregion Fields
+
+    #region Enums
+
+    /// <summary>
+    /// Type of alert
+    /// </summary>
     public enum AlertType
     {
         Danger = 0,
         Target = 1
     }
 
+    /// <summary>
+    /// What type of animal it is, whether it is agressive or not.
+    /// </summary>
     public enum AnimalType
     {
         aggresive = 0,
         scared = 1
     }
 
+    /// <summary>
+    /// Current state of the AI
+    /// </summary>
     public enum CurrentAIState
     {
         Idling = 0,
         GoingHome = 1,
         FindingFood = 2
     }
+
+    #endregion Enums
+
+    #region Properties
 
     /// <summary>
     /// Returns whether or not the ai component has a path.
@@ -84,6 +107,9 @@ public class AI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// The AI's current target.
+    /// </summary>
     public GameObject target
     {
         get
@@ -128,6 +154,10 @@ public class AI : MonoBehaviour
         }
     }
 
+    #endregion Properties
+
+    #region Methods
+
     /// <summary>
     /// Alerts the master of a nearby enemy.
     /// </summary>
@@ -135,13 +165,21 @@ public class AI : MonoBehaviour
     /// <param name="type">If the target is dangerous or not.</param>
     public void Alert(GameObject Target, AlertType type)
     {
-        if (master == null)
+        if (target == Target)
         {
             return;
         }
-        if (AlertSound != null && GetComponent<AudioSource>() != null)
+        if (master == null)
         {
-            GetComponent<AudioSource>().PlayOneShot(AlertSound);
+            LockTarget = false;
+            target = Target;
+            FindAPath(Target.transform.position);
+            LockTarget = true;
+            return;
+        }
+        if (AlertSound != null && audio != null)
+        {
+            audio.PlayOneShot(AlertSound);
         }
 
         AI ai = master.GetComponent<AI>();
@@ -186,26 +224,16 @@ public class AI : MonoBehaviour
     }
 
     /// <summary>
-    /// Checks if target is still in-range.
+    /// Checks if this gameobject and the subject is from the same flock.
     /// </summary>
-    /// <param name="obj">GameObject used for checking.</param>
-    /// <returns></returns>
-    public bool IsClose(GameObject obj)
+    /// <param name="subject">The gameobject to test against.</param>
+    /// <returns>Bool, telling whether or not they are from the same flock.</returns>
+    public bool IsFlockMember(GameObject subject)
     {
-        if (obj == null)
+        if (subject.tag == "AI")
         {
-            return false;
-        }
-        if (Vector3.Distance(transform.position, obj.transform.position) < ViewDistance)
-        {
-            if (Physics.Raycast(transform.position, obj.transform.position, ViewDistance))
+            if (gameObject.transform == subject.transform || subject.GetComponent<AI>().FlockID == FlockID)
             {
-                //I can see the target
-                return true;
-            }
-            else if (Smell() != null)
-            {
-                //I can smell the target
                 return true;
             }
         }
@@ -213,68 +241,65 @@ public class AI : MonoBehaviour
     }
 
     /// <summary>
-    /// Checks if this gameobject and the subject is from the same flock.
+    /// Promote a new leader of the flock, this would happen if the leader gets killed.
     /// </summary>
-    /// <param name="subject">The gameobject to test against.</param>
-    /// <returns>Bool, telling whether or not they are from the same flock.</returns>
-    public bool IsFlockMember(GameObject subject)
+    public void PromoteNewLeader()
     {
-        if (subject.tag == "AI" && subject.GetComponent<AI>().FlockID == FlockID)
-        {
-            return true;
-        }
-        return false;
-    }
-
-    public bool PromoteNewLeader()
-    {
-        if (!FlockAnimal)
-        {
-            return false;
-        }
-
-        bool found = false;
+        GameObject f = null;
 
         foreach (AI ai in FindObjectsOfType<AI>())
         {
-            if (ai.FlockID == FlockID)
+            if (IsFlockMember(ai.gameObject))
             {
-                if (!found)
+                if (f == null)
                 {
                     ai.IsMaster = true;
                     f = ai.gameObject;
-                    found = true;
                 }
-                else if (f != null)
+                else
                 {
                     ai.master = f;
-                    f = null;
                 }
             }
         }
-
-        return found;
     }
 
-    public GameObject Smell()
+    /// <summary>
+    /// Alert all the surounding objects, when the object makes a noise.
+    /// </summary>
+    private void AlertObjects()
     {
-        Collider[] col = Physics.OverlapSphere(transform.position - (Wind.windVector3 * SmellDistance), SmellDistance);
-        foreach (Collider collider in col)
+        if (Type == AnimalType.aggresive)
         {
-            if (collider.tag == "AI" || collider.tag == "Player")
+            return;
+        }
+        Collider[] colliders = Physics.OverlapSphere(transform.position, audioValue * audio.maxDistance);
+        foreach (Collider col in colliders)
+        {
+            if (!IsFlockMember(col.gameObject))
             {
-                if (IsFlockMember(collider.gameObject))
-                {
-                    continue;
-                }
-                if (collider.transform != transform)
-                {
-                    transform.LookAt(collider.transform.position);
-                    return collider.gameObject;
-                }
+                continue;
+            }
+            if (col.tag == "AI" && col.GetComponent<AI>().Size < Size)
+            {
+                col.GetComponent<AI>().Alert(col.gameObject, AlertType.Danger);
             }
         }
-        return null;
+    }
+
+    private float AnalyzeSound()
+    {
+        float max = 0;
+        float[] samples = new float[1024];
+        audio.GetOutputData(samples, 0);
+        for (int i = 0; i < samples.Length; i++)
+        {
+            if (samples[i] > max)
+            {
+                max = samples[i];
+            }
+        }
+        return max;
     }
 
     /// <summary>
@@ -289,9 +314,11 @@ public class AI : MonoBehaviour
         }
         if (target.tag == "AI")
         {
-            target.GetComponent<AIData>().Health -= dmg;
-            if (target.GetComponent<AIData>().Health == 0)
+            AIData targetData = target.GetComponent<AIData>();
+            targetData.Health -= dmg;
+            if (targetData.Health == 0)
             {
+                Debug.Log("Eating: " + 10 * target.GetComponent<AI>().Size);
                 Data.Hunger += 10 * target.GetComponent<AI>().Size;
             }
         }
@@ -311,11 +338,6 @@ public class AI : MonoBehaviour
     /// </summary>
     private void EndOfPath()
     {
-        if (Type == AnimalType.aggresive && target != null && Vector3.Distance(transform.position, target.transform.position) <= AttackRange)
-        {
-            Attack(Damage);
-        }
-
         AIState = CurrentAIState.Idling;
         LockTarget = false;
         path = null;
@@ -366,6 +388,16 @@ public class AI : MonoBehaviour
         return Closest;
     }
 
+    private Vector3 FindOpposite(Vector3 gobj)
+    {
+        Vector3 offset = transform.position - gobj;
+        offset.x = Mathf.Clamp(Mathf.Abs(offset.x) * 100f, -1.0f, 1.0f);
+        offset.z = Mathf.Clamp(Mathf.Abs(offset.z) * 100f, -1.0f, 1.0f);
+
+        pos = transform.position - (offset * 50f);
+        return transform.position - (offset * 50f);
+    }
+
     private void FindPath()
     {
         if (Terrain.activeTerrain != null)
@@ -384,17 +416,31 @@ public class AI : MonoBehaviour
             else if (!LockTarget)
             {
                 target = FindClosest();
-
                 if (target != null)
                 {
-                    FindAPath(target.transform.position);
+                    if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AI>().Size > Size))
+                    {
+                        Vector3 loc = FindOpposite(target.transform.position);
+                        FindAPath(loc);
+                    }
+                    else
+                    {
+                        FindAPath(target.transform.position);
+                    }
                     return;
                 }
                 target = Smell();
                 if (target != null)
                 {
-                    FindAPath(target.transform.position);
-                    return;
+                    if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AI>().Size > Size))
+                    {
+                        Vector3 loc = FindOpposite(target.transform.position);
+                        FindAPath(loc);
+                    }
+                    else
+                    {
+                        FindAPath(target.transform.position);
+                    }
                 }
 
                 if (AIState == CurrentAIState.Idling)
@@ -411,7 +457,7 @@ public class AI : MonoBehaviour
                             {
                                 FindAPath(transform.position + GridPos);
                             }
-                            else
+                            else if (master != null)
                             {
                                 FindAPath(master.transform.position + GridPos);
                             }
@@ -445,7 +491,15 @@ public class AI : MonoBehaviour
                     target = FindClosest();
                     if (target != null)
                     {
-                        FindAPath(target.transform.position);
+                        if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AI>().Size > Size))
+                        {
+                            Vector3 loc = FindOpposite(target.transform.position);
+                            FindAPath(loc);
+                        }
+                        else
+                        {
+                            FindAPath(target.transform.position);
+                        }
                         return;
                     }
                 }
@@ -454,8 +508,27 @@ public class AI : MonoBehaviour
         }
     }
 
+    private IEnumerator NoiseMaker()
+    {
+        float LastNoise = 0f;
+        float ran = Random.Range(0.0f, 100.0f);
+        while (true)
+        {
+            TillNoise = (Time.realtimeSinceStartup - ran) - LastNoise;
+            if (Time.realtimeSinceStartup - LastNoise > ran)
+            {
+                audio.clip = AlertSound;
+                //audio.Play();
+                LastNoise = Time.realtimeSinceStartup;
+                ran = Random.Range(0.0f, 600.0f);
+            }
+            yield return null;
+        }
+    }
+
     private void OnDrawGizmos()
     {
+        Gizmos.DrawCube(pos, Vector3.one);
         //Path
         if (GridManager.ShowPath && path != null)
         {
@@ -475,8 +548,13 @@ public class AI : MonoBehaviour
             }
         }
 
-        if (GridManager.ShowGizmos)
+        if (GridManager.ShowGizmo)
         {
+            if (audio != null && audioValue != 0f)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(transform.position, audioValue * audio.maxDistance);
+            }
             Color c = Color.green;
 
             if (FindObjectOfType<GridManager>().ShowFlockColor && FlockAnimal)
@@ -522,8 +600,31 @@ public class AI : MonoBehaviour
         }
     }
 
+    private GameObject Smell()
+    {
+        Collider[] col = Physics.OverlapSphere(transform.position - (Wind.windVector3 * SmellDistance), SmellDistance);
+        foreach (Collider collider in col)
+        {
+            if (collider.tag == "AI" || collider.tag == "Player")
+            {
+                if (IsFlockMember(collider.gameObject))
+                {
+                    continue;
+                }
+                if (collider.transform != transform)
+                {
+                    return collider.gameObject;
+                }
+            }
+        }
+        return null;
+    }
+
     private void Start()
     {
+        audio = GetComponent<AudioSource>();
+        audio.maxDistance = NoiseDistance;
+        audio.minDistance = 0f;
         RandomSpeed = Random.Range(-2.0f, 2.0f);
 
         Data = GetComponent<AIData>();
@@ -549,6 +650,7 @@ public class AI : MonoBehaviour
 
         InvokeRepeating("FindPath", Random.Range(0.0f, RefreshRate), RefreshRate);
         StartCoroutine(UpdateState()); //Start state updater
+        StartCoroutine(NoiseMaker());
 
         if (master == null && FlockAnimal)
         {
@@ -558,6 +660,22 @@ public class AI : MonoBehaviour
 
     private void Update()
     {
+        if (audio != null)
+        {
+            audioValue = AnalyzeSound();
+            if (audioValue != 0.0f)
+            {
+                AlertObjects();
+            }
+        }
+        if (Type == AnimalType.aggresive && target != null && Vector3.Distance(transform.position, target.transform.position) <= AttackRange)
+        {
+            if (LastAttack - Time.realtimeSinceStartup > 1.0f)
+            {
+                LastAttack = Time.realtimeSinceStartup;
+                Attack(Damage);
+            }
+        }
         if (Flying)
         {
             if (flyTarget != Vector3.zero)
@@ -587,7 +705,6 @@ public class AI : MonoBehaviour
         currentWay = path.Vector3Path[currentWaypoint];
 
         Vector3 rot = currentWay;
-
         rot.y = transform.position.y;
 
         transform.LookAt(rot);
@@ -632,4 +749,6 @@ public class AI : MonoBehaviour
             yield return null;
         }
     }
+
+    #endregion Methods
 }

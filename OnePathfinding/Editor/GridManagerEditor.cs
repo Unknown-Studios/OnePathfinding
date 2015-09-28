@@ -6,12 +6,18 @@ using UnityEngine;
 [CustomEditor(typeof(GridManager))]
 public class GMEditor : Editor
 {
+    #region Fields
+
     public static long lastUpdateTick;
     public static string[] layerNames;
     public static List<int> layerNumbers;
     public static List<string> layers;
     public bool[] current;
     private GridManager GM;
+
+    #endregion Fields
+
+    #region Methods
 
     public LayerMask LayerMaskField(string label, LayerMask selected, bool showSpecial)
     {
@@ -73,7 +79,7 @@ public class GMEditor : Editor
         EditorGUILayout.LabelField(new GUIContent("Currently active AIs: " + FindObjectsOfType<AI>().Length.ToString(), "This label shows how many AI components is found in the scene"));
         EditorGUILayout.LabelField("Scanning: " + GridManager.isScanning);
         GM.DebugLvl = (GridManager.DebugLevel)EditorGUILayout.EnumPopup("Debug Level: ", GM.DebugLvl);
-        GM._ShowGizmos = EditorGUILayout.Toggle("Show Gizmos: ", GM._ShowGizmos);
+        GM.ShowGizmos = EditorGUILayout.Toggle("Show Gizmos: ", GM.ShowGizmos);
         GM.ShowFlockColor = EditorGUILayout.Toggle(new GUIContent("Show Flock Color", "Each flock has a color for their gizmos, making it easier to see who's who."), GM.ShowFlockColor);
         GM.ShowPaths = EditorGUILayout.Toggle(new GUIContent("Show Paths", "Show each AIs current path"), GM.ShowPaths);
 
@@ -134,4 +140,6 @@ public class GMEditor : Editor
     {
         Repaint();
     }
+
+    #endregion Methods
 }

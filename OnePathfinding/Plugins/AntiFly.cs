@@ -3,8 +3,14 @@
 [RequireComponent(typeof(Rigidbody))]
 public class AntiFly : MonoBehaviour
 {
+    #region Fields
+
     private Terrain t;
     private TerrainData td;
+
+    #endregion Fields
+
+    #region Methods
 
     private void OnEnable()
     {
@@ -16,6 +22,7 @@ public class AntiFly : MonoBehaviour
     {
         if (GetComponent<Rigidbody>())
         {
+            GetComponent<Rigidbody>().useGravity = true;
             GetComponent<Rigidbody>().freezeRotation = true;
         }
     }
@@ -28,9 +35,16 @@ public class AntiFly : MonoBehaviour
             Vector2 Normal = new Vector2(pos.x / td.size.x, pos.z / td.size.z);
 
             Vector3 CurPos = transform.position;
-            CurPos.y = td.GetInterpolatedHeight(Normal.x, Normal.y);
-            CurPos.y += 2;
+            CurPos.x = Mathf.Clamp(CurPos.x, t.transform.position.x, t.terrainData.size.x);
+            CurPos.z = Mathf.Clamp(CurPos.z, t.transform.position.z, t.terrainData.size.z);
+            if (Normal.x > 0 && Normal.x < 1 && Normal.y > 0 && Normal.y < 1)
+            {
+                CurPos.y = td.GetInterpolatedHeight(Normal.x, Normal.y);
+                CurPos.y += 2;
+            }
             transform.position = CurPos;
         }
     }
+
+    #endregion Methods
 }

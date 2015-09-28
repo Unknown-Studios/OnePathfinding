@@ -1,0 +1,12 @@
+# Version 1.1.0
+- Fixed Scared animals not fleeing combat, but engaging it.
+- Added Audio sensor support.
+	- Added AudioScript.cs which can be attached to external audio sources.
+- Added support for spawning multiple gameobjects from Test.cs script.
+- Added option to change how many AIs is spawned by Test.cs
+- Added option on AIData to enable/disable respawning.
+- Added a new example of a scared AI
+- Improved AntiFly script.
+
+# Version 1.0.0
+- Initial release

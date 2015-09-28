@@ -3,21 +3,39 @@ using UnityEngine;
 
 public class Wind : MonoBehaviour
 {
+    #region Fields
+
     public static float speed;
+
+    public Vector2 _wind;
 
     /// <summary>
     /// The rate at which the wind direction updates. (In seconds)
     /// </summary>
     public int RepeatRate;
 
-    public Vector2 _wind;
-
     private static Wind _instance;
+
+    #endregion Fields
+
+    #region Properties
+
+    public static Wind instance
+    {
+        get
+        {
+            return _instance;
+        }
+    }
 
     public static Vector2 wind
     {
         get
         {
+            if (instance == null)
+            {
+                return Vector2.zero;
+            }
             return instance._wind;
         }
         set
@@ -34,13 +52,9 @@ public class Wind : MonoBehaviour
         }
     }
 
-    public static Wind instance
-    {
-        get
-        {
-            return _instance;
-        }
-    }
+    #endregion Properties
+
+    #region Methods
 
     public void Awake()
     {
@@ -56,11 +70,6 @@ public class Wind : MonoBehaviour
         InvokeRepeating("UW", 0.0f, RepeatRate);
     }
 
-    private void UW()
-    {
-        StartCoroutine(UpdateWind());
-    }
-
     private IEnumerator UpdateWind()
     {
         Vector2 NewWind = new Vector2((Random.value * 2.0f) - 1.0f, (Random.value * 2.0f) - 1.0f);
@@ -72,4 +81,11 @@ public class Wind : MonoBehaviour
             yield return null;
         }
     }
+
+    private void UW()
+    {
+        StartCoroutine(UpdateWind());
+    }
+
+    #endregion Methods
 }

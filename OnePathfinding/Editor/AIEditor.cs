@@ -4,10 +4,16 @@ using UnityEngine;
 [CustomEditor(typeof(AI))]
 public class AIEditor : Editor
 {
+    #region Fields
+
     private AI _target;
 
     private bool ShowData = true;
     private bool ShowSpecs;
+
+    #endregion Fields
+
+    #region Methods
 
     public override void OnInspectorGUI()
     {
@@ -21,6 +27,7 @@ public class AIEditor : Editor
             EditorGUILayout.LabelField("Animal Size: " + _target.Size);
             EditorGUILayout.LabelField("Has Path: " + (_target.hasPath));
             EditorGUILayout.LabelField("Animal State: " + _target.AIState);
+            EditorGUILayout.LabelField("Time till automated noise: " + Mathf.Round(-1f * _target.TillNoise) + "s");
             if (_target.FlockAnimal)
             {
                 EditorGUILayout.LabelField("Flock ID: " + _target.FlockID);
@@ -37,6 +44,10 @@ public class AIEditor : Editor
             _target.Damage = EditorGUILayout.FloatField("Damage: ", _target.Damage);
             _target.SmellDistance = EditorGUILayout.FloatField("Smell Distance: ", _target.SmellDistance);
             _target.ViewDistance = EditorGUILayout.FloatField("View Distance: ", _target.ViewDistance);
+            if (_target.AlertSound != null)
+            {
+                _target.NoiseDistance = EditorGUILayout.FloatField(new GUIContent("Noise Distance", "The maximum distance at which the alert sound can be heard."), _target.NoiseDistance);
+            }
 
             GUILayout.Space(5f);
 
@@ -57,4 +68,6 @@ public class AIEditor : Editor
     {
         Repaint();
     }
+
+    #endregion Methods
 }

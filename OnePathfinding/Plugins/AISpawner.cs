@@ -2,7 +2,13 @@
 
 public class AISpawner : MonoBehaviour
 {
+    #region Fields
+
     public static AISpawner instance;
+
+    #endregion Fields
+
+    #region Methods
 
     /// <summary>
     /// Spawns a object at a position.
@@ -20,7 +26,7 @@ public class AISpawner : MonoBehaviour
 
         Transform gridTransform = FindObjectOfType<GridManager>().transform;
 
-        GameObject ob = (GameObject)GameObject.Instantiate(obj, position, Quaternion.identity);
+        GameObject ob = (GameObject)Instantiate(obj, position, Quaternion.identity);
 
         AI ai = ob.GetComponent<AI>();
         ob.transform.parent = gridTransform;
@@ -81,7 +87,7 @@ public class AISpawner : MonoBehaviour
         int i = 0;
         while (i < Amount)
         {
-            GameObject ob = (GameObject)GameObject.Instantiate(obj, new Vector3(Random.Range(minX, maxX), 0, Random.Range(minY, maxY)), Quaternion.identity);
+            GameObject ob = (GameObject)Instantiate(obj, new Vector3(Random.Range(minX, maxX), 0, Random.Range(minY, maxY)), Quaternion.identity);
 
             i++;
             AI ai = ob.GetComponent<AI>();
@@ -98,7 +104,7 @@ public class AISpawner : MonoBehaviour
                     int o = 0;
                     while (o < flockSize && i < Amount)
                     {
-                        GameObject bo = (GameObject)GameObject.Instantiate(obj, ob.transform.position, Quaternion.identity);
+                        GameObject bo = (GameObject)Instantiate(obj, ob.transform.position, Quaternion.identity);
                         bo.transform.parent = gridTransform;
                         bo.GetComponent<AI>().master = ob;
                         bo.GetComponent<AI>().FlockID = ai.FlockID;
@@ -126,4 +132,6 @@ public class AISpawner : MonoBehaviour
     {
         instance = this;
     }
+
+    #endregion Methods
 }
