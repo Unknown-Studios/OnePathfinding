@@ -7,9 +7,10 @@ It is developed by Unknown-Studios.
 - A query system to make things more smooth
 - An advanced example which contains smelling (with wind), seeing and flocking.
 - It has been built for procedural terrains
+- Audio sensors
 
 # Planned Features
-- Audio sensors
+- More examples
 - Waypoint following
 
 #Information
