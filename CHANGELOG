@@ -1,3 +1,6 @@
+# Version 1.1.1
+- Fixed wrong hierachy format for plugins.
+
 # Version 1.1.0
 - Fixed Scared animals not fleeing combat, but engaging it.
 - Added Audio sensor support.

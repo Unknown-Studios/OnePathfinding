@@ -76,7 +76,7 @@ public class GMEditor : Editor
             current = new bool[GM.grid.Count];
         }
 
-        EditorGUILayout.LabelField(new GUIContent("Currently active AIs: " + FindObjectsOfType<AI>().Length.ToString(), "This label shows how many AI components is found in the scene"));
+        EditorGUILayout.LabelField(new GUIContent("Currently active AIs: " + FindObjectsOfType<AdvancedAI>().Length.ToString(), "This label shows how many AI components is found in the scene"));
         EditorGUILayout.LabelField("Scanning: " + GridManager.isScanning);
         GM.DebugLvl = (GridManager.DebugLevel)EditorGUILayout.EnumPopup("Debug Level: ", GM.DebugLvl);
         GM.ShowGizmos = EditorGUILayout.Toggle("Show Gizmos: ", GM.ShowGizmos);

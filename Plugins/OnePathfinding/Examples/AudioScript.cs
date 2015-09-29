@@ -28,9 +28,9 @@ public class AudioScript : MonoBehaviour
             {
                 continue;
             }
-            if (col.tag == "AI" && (SizeThreshold == 0f || col.GetComponent<AI>().Size < SizeThreshold))
+            if (col.tag == "AI" && (SizeThreshold == 0f || col.GetComponent<AdvancedAI>().Size < SizeThreshold))
             {
-                col.GetComponent<AI>().Alert(col.gameObject, AI.AlertType.Danger);
+                col.GetComponent<AdvancedAI>().Alert(col.gameObject, AdvancedAI.AlertType.Danger);
             }
         }
     }

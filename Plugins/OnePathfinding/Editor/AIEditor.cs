@@ -1,12 +1,12 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(AI))]
-public class AIEditor : Editor
+[CustomEditor(typeof(AdvancedAI))]
+public class AdvancedAIEditor : Editor
 {
     #region Fields
 
-    private AI _target;
+    private AdvancedAI _target;
 
     private bool ShowData = true;
     private bool ShowSpecs;
@@ -17,7 +17,7 @@ public class AIEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        _target = (AI)target;
+        _target = (AdvancedAI)target;
 
         GUILayout.Space(10f);
 
@@ -52,7 +52,7 @@ public class AIEditor : Editor
             GUILayout.Space(5f);
 
             //_target.Flying = EditorGUILayout.Toggle("Flying Animal: ", _target.Flying);
-            _target.Type = (AI.AnimalType)EditorGUILayout.EnumPopup("Animal Type: ", _target.Type);
+            _target.Type = (AdvancedAI.AnimalType)EditorGUILayout.EnumPopup("Animal Type: ", _target.Type);
             _target.FlockAnimal = EditorGUILayout.Toggle("Flock Animal: ", _target.FlockAnimal);
             if (_target.FlockAnimal)
             {

@@ -5,7 +5,7 @@ using Random = UnityEngine.Random;
 
 [RequireComponent(typeof(AIData))]
 [RequireComponent(typeof(AudioSource))]
-public class AI : MonoBehaviour
+public class AdvancedAI : MonoBehaviour
 {
     #region Fields
 
@@ -123,7 +123,7 @@ public class AI : MonoBehaviour
             {
                 if (master != null)
                 {
-                    if (_target.GetComponent<AI>() != null && ((_target.GetComponent<AI>().Size > Size)))
+                    if (_target.GetComponent<AdvancedAI>() != null && ((_target.GetComponent<AdvancedAI>().Size > Size)))
                     {
                         Alert(_target, AlertType.Danger);
                     }
@@ -182,7 +182,7 @@ public class AI : MonoBehaviour
             audio.PlayOneShot(AlertSound);
         }
 
-        AI ai = master.GetComponent<AI>();
+        AdvancedAI ai = master.GetComponent<AdvancedAI>();
         ai.target = Target;
         ai.FindAPath(Target.transform.position);
         LockTarget = true;
@@ -232,7 +232,7 @@ public class AI : MonoBehaviour
     {
         if (subject.tag == "AI")
         {
-            if (gameObject.transform == subject.transform || subject.GetComponent<AI>().FlockID == FlockID)
+            if (gameObject.transform == subject.transform || subject.GetComponent<AdvancedAI>().FlockID == FlockID)
             {
                 return true;
             }
@@ -247,7 +247,7 @@ public class AI : MonoBehaviour
     {
         GameObject f = null;
 
-        foreach (AI ai in FindObjectsOfType<AI>())
+        foreach (AdvancedAI ai in FindObjectsOfType<AdvancedAI>())
         {
             if (IsFlockMember(ai.gameObject))
             {
@@ -280,9 +280,9 @@ public class AI : MonoBehaviour
             {
                 continue;
             }
-            if (col.tag == "AI" && col.GetComponent<AI>().Size < Size)
+            if (col.tag == "AI" && col.GetComponent<AdvancedAI>().Size < Size)
             {
-                col.GetComponent<AI>().Alert(col.gameObject, AlertType.Danger);
+                col.GetComponent<AdvancedAI>().Alert(col.gameObject, AlertType.Danger);
             }
         }
     }
@@ -318,8 +318,8 @@ public class AI : MonoBehaviour
             targetData.Health -= dmg;
             if (targetData.Health == 0)
             {
-                Debug.Log("Eating: " + 10 * target.GetComponent<AI>().Size);
-                Data.Hunger += 10 * target.GetComponent<AI>().Size;
+                Debug.Log("Eating: " + 10 * target.GetComponent<AdvancedAI>().Size);
+                Data.Hunger += 10 * target.GetComponent<AdvancedAI>().Size;
             }
         }
         else if (target.tag == "Player")
@@ -418,7 +418,7 @@ public class AI : MonoBehaviour
                 target = FindClosest();
                 if (target != null)
                 {
-                    if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AI>().Size > Size))
+                    if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AdvancedAI>().Size > Size))
                     {
                         Vector3 loc = FindOpposite(target.transform.position);
                         FindAPath(loc);
@@ -432,7 +432,7 @@ public class AI : MonoBehaviour
                 target = Smell();
                 if (target != null)
                 {
-                    if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AI>().Size > Size))
+                    if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AdvancedAI>().Size > Size))
                     {
                         Vector3 loc = FindOpposite(target.transform.position);
                         FindAPath(loc);
@@ -491,7 +491,7 @@ public class AI : MonoBehaviour
                     target = FindClosest();
                     if (target != null)
                     {
-                        if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AI>().Size > Size))
+                        if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AdvancedAI>().Size > Size))
                         {
                             Vector3 loc = FindOpposite(target.transform.position);
                             FindAPath(loc);

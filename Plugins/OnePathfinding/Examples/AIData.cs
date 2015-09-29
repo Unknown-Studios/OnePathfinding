@@ -20,7 +20,7 @@ public class AIData : MonoBehaviour
 
     private void KillMe()
     {
-        GetComponent<AI>().PromoteNewLeader();
+        GetComponent<AdvancedAI>().PromoteNewLeader();
         if (Respawn)
         {
             AISpawner.Spawn(gameObject, 1);

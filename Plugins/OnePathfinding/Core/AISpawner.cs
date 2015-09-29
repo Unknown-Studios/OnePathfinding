@@ -28,7 +28,7 @@ public class AISpawner : MonoBehaviour
 
         GameObject ob = (GameObject)Instantiate(obj, position, Quaternion.identity);
 
-        AI ai = ob.GetComponent<AI>();
+        AdvancedAI ai = ob.GetComponent<AdvancedAI>();
         ob.transform.parent = gridTransform;
 
         if (ai != null)
@@ -52,8 +52,8 @@ public class AISpawner : MonoBehaviour
                         bo = (GameObject)Instantiate(obj, ob.transform.position, Quaternion.identity);
                     }
                     bo.transform.parent = gridTransform;
-                    bo.GetComponent<AI>().master = ob;
-                    bo.GetComponent<AI>().FlockID = ai.FlockID;
+                    bo.GetComponent<AdvancedAI>().master = ob;
+                    bo.GetComponent<AdvancedAI>().FlockID = ai.FlockID;
                     bo.name = bo.name.Replace("(Clone)", "");
 
                     o++;
@@ -90,7 +90,7 @@ public class AISpawner : MonoBehaviour
             GameObject ob = (GameObject)Instantiate(obj, new Vector3(Random.Range(minX, maxX), 0, Random.Range(minY, maxY)), Quaternion.identity);
 
             i++;
-            AI ai = ob.GetComponent<AI>();
+            AdvancedAI ai = ob.GetComponent<AdvancedAI>();
             ob.transform.parent = gridTransform;
 
             if (ai != null)
@@ -106,8 +106,8 @@ public class AISpawner : MonoBehaviour
                     {
                         GameObject bo = (GameObject)Instantiate(obj, ob.transform.position, Quaternion.identity);
                         bo.transform.parent = gridTransform;
-                        bo.GetComponent<AI>().master = ob;
-                        bo.GetComponent<AI>().FlockID = ai.FlockID;
+                        bo.GetComponent<AdvancedAI>().master = ob;
+                        bo.GetComponent<AdvancedAI>().FlockID = ai.FlockID;
                         bo.name = bo.name.Replace("(Clone)", "");
 
                         i++;
