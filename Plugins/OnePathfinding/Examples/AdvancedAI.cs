@@ -314,12 +314,10 @@ public class AdvancedAI : MonoBehaviour
         }
         if (target.tag == "AI")
         {
-            AIData targetData = target.GetComponent<AIData>();
-            targetData.Health -= dmg;
-            if (targetData.Health == 0)
+            target.GetComponent<AIData>().Health -= dmg;
+            if (target.GetComponent<AIData>().Health == 0)
             {
-                Debug.Log("Eating: " + 10 * target.GetComponent<AdvancedAI>().Size);
-                Data.Hunger += 10 * target.GetComponent<AdvancedAI>().Size;
+                GetComponent<AIData>().Hunger += 10 * target.GetComponent<AdvancedAI>().Size;
             }
         }
         else if (target.tag == "Player")
@@ -670,7 +668,7 @@ public class AdvancedAI : MonoBehaviour
         }
         if (Type == AnimalType.aggresive && target != null && Vector3.Distance(transform.position, target.transform.position) <= AttackRange)
         {
-            if (LastAttack - Time.realtimeSinceStartup > 1.0f)
+            if (Time.realtimeSinceStartup - LastAttack > 1.0f)
             {
                 LastAttack = Time.realtimeSinceStartup;
                 Attack(Damage);

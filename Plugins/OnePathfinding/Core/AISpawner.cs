@@ -104,7 +104,8 @@ public class AISpawner : MonoBehaviour
                     int o = 0;
                     while (o < flockSize && i < Amount)
                     {
-                        GameObject bo = (GameObject)Instantiate(obj, ob.transform.position, Quaternion.identity);
+                        Vector3 r = new Vector3(Random.Range(0f, 10f), 0, Random.Range(0f, 10f));
+                        GameObject bo = (GameObject)Instantiate(obj, ob.transform.position + r, Quaternion.identity);
                         bo.transform.parent = gridTransform;
                         bo.GetComponent<AdvancedAI>().master = ob;
                         bo.GetComponent<AdvancedAI>().FlockID = ai.FlockID;

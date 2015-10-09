@@ -40,7 +40,7 @@ public class AntiFly : MonoBehaviour
             if (Normal.x > 0 && Normal.x < 1 && Normal.y > 0 && Normal.y < 1)
             {
                 CurPos.y = td.GetInterpolatedHeight(Normal.x, Normal.y);
-                CurPos.y += 2;
+                CurPos.y += 5;
             }
             transform.position = CurPos;
         }

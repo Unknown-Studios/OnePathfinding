@@ -59,7 +59,7 @@ public class AIData : MonoBehaviour
 
     private void Update()
     {
-        Hunger = Mathf.Clamp(Hunger, 0.0f, 100.0f);
+        Hunger = Mathf.Clamp(Hunger, 0.0f, 250.0f);
         Health = Mathf.Clamp(Health, 0.0f, 100.0f);
         if (Health == 0.0f)
         {

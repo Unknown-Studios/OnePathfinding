@@ -1,3 +1,8 @@
+# Version 1.1.2
+- Fixed two compiler errors when building.
+- Added Spectator mode to example scene.
+- Fixed Attacks never occuring when using advanced AI script
+
 # Version 1.1.1
 - Fixed wrong hierachy format for plugins.
 
