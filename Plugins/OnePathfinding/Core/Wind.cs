@@ -3,8 +3,6 @@ using UnityEngine;
 
 public class Wind : MonoBehaviour
 {
-    #region Fields
-
     public static float speed;
 
     public Vector2 _wind;
@@ -15,11 +13,7 @@ public class Wind : MonoBehaviour
     public int RepeatRate;
 
     private static Wind _instance;
-
-    #endregion Fields
-
-    #region Properties
-
+    
     public static Wind instance
     {
         get
@@ -52,10 +46,6 @@ public class Wind : MonoBehaviour
         }
     }
 
-    #endregion Properties
-
-    #region Methods
-
     public void Awake()
     {
         if (FindObjectsOfType<Wind>().Length > 1)
@@ -86,6 +76,4 @@ public class Wind : MonoBehaviour
     {
         StartCoroutine(UpdateWind());
     }
-
-    #endregion Methods
 }

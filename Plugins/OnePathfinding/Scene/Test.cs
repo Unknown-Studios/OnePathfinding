@@ -3,14 +3,8 @@ using UnityEngine;
 
 public class Test : MonoBehaviour
 {
-    #region Fields
-
     public List<GameObject> gameobjects;
     public int NumberOfAIs = 100;
-
-    #endregion Fields
-
-    #region Methods
 
     private void Start()
     {
@@ -19,6 +13,4 @@ public class Test : MonoBehaviour
             AISpawner.Spawn(g, NumberOfAIs / gameobjects.Count);
         }
     }
-
-    #endregion Methods
 }

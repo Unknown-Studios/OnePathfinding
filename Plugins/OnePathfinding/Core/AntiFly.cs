@@ -3,14 +3,8 @@
 [RequireComponent(typeof(Rigidbody))]
 public class AntiFly : MonoBehaviour
 {
-    #region Fields
-
     private Terrain t;
     private TerrainData td;
-
-    #endregion Fields
-
-    #region Methods
 
     private void OnEnable()
     {
@@ -45,6 +39,4 @@ public class AntiFly : MonoBehaviour
             transform.position = CurPos;
         }
     }
-
-    #endregion Methods
 }

@@ -1,0 +1,28 @@
+# Setup:
+
+1.	Create a terrain for the objects to move on.
+ 
+2.	Create an empty gameobject, this gameobject will work as your manager. 
+	Make sure that you are never going to end up with two of these components.
+	
+3.	Attach the GridManager script from Plugins/OnePathfinding/Core/GridManager.cs
+	or
+	use the already setup prefab called GameController under Plugins/OnePathfinding/Prefab/GameController.prefab
+
+3.5. (Optional) Attach the AISpawner component to the GameController, 
+	this can be used for spawning AIs with ease.
+
+4.	Create a grid by clicking on Add Grid on the gridmanager component, 
+	then fill out the options for it.
+	
+5.	Attach the AdvancedAI or SimpleAI scripts to the ai gameobject.
+
+5.5. If you added AISpawner you should also add Test or write your own script that uses the AISpawner.
+
+6.	The AI's should spawn and begin to move around.
+
+If the steps was followed correctly, the AI should be moving by now, if you have any problems please write on the forum post:
+http://forum.unity3d.com/threads/onepathfinding.357444/
+
+If you want to write your own component start by taking a look at SimpleAI, and as you advance move to the advancedAI.
+	

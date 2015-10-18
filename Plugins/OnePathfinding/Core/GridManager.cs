@@ -1,14 +1,13 @@
-﻿using Pathfinding;
+﻿using OnePathfinding;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
+[RequireComponent(typeof(Wind))]
 public class GridManager : MonoBehaviour
 {
-    #region Fields
-
     public static bool isScanning;
     public DebugLevel DebugLvl;
     public List<GridGraph> grid;
@@ -19,20 +18,12 @@ public class GridManager : MonoBehaviour
     private PathRequest currentPathRequest;
     private queue pathRequests = new queue();
 
-    #endregion Fields
-
-    #region Enums
-
     public enum DebugLevel
     {
         None = 0,
         Low = 1,
         High = 2,
     }
-
-    #endregion Enums
-
-    #region Properties
 
     public static GridGraph Grid
     {
@@ -94,10 +85,6 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    #endregion Properties
-
-    #region Methods
-
     /// <summary>
     /// Get the grid with the given index in the grid list
     /// </summary>
@@ -113,39 +100,19 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Request a path from point pathStart to point pathEnd.
-    /// </summary>
-    /// <param name="pathStart">The starting point of the path</param>
-    /// <param name="pathEnd">The ending point of the path</param>
-    /// <param name="callback">A function with the parameters (Path)</param>
-    /// <param name="Name">A random string, this is used for identifiing a queue in the queuesystem.</param>
-    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Path> callback, string Name)
-    {
-        PathRequest newRequest = new PathRequest(pathStart, pathEnd, callback, Name, Grid);
-        PathRequest contains = instance.pathRequests.Contains(Name);
-        if (contains != null)
-        {
-            instance.pathRequests.Remove(contains);
-            return;
-        }
-        else
-        {
-            instance.pathRequests.Enqueue(newRequest);
-            instance.Process();
-            return;
-        }
-    }
-
-    /// <summary>
     /// Request a path from point pathStart to point pathEnd, in a specific grid.
     /// </summary>
     /// <param name="pathStart">The starting point of the path</param>
     /// <param name="pathEnd">The ending point of the path</param>
     /// <param name="callback">A function with the parameters (Path)</param>
-    /// <param name="Name">A random string, this is used for identifiing a queue in the queuesystem.</param>
     /// <param name="grid">The specific grid you want to find the path on.</param>
-    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Path> callback, string Name, GridGraph grid)
+    public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Path> callback, GridGraph grid = null)
     {
+        if (grid == null)
+        {
+            grid = Grid;
+        }
+        string Name = (pathStart * pathEnd.x).GetHashCode().ToString();
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, callback, Name, grid);
         PathRequest contains = instance.pathRequests.Contains(Name);
         if (contains != null)
@@ -162,28 +129,19 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Scan the first grid in the grid array
+    /// Scan a specific grid in the grid array.
     /// </summary>
-    public static void ScanGrid()
+    /// <param name="grid">The grid that is going to be scanned.</param>
+    public static void ScanGrid(GridGraph grid = null)
     {
         if (instance == null)
         {
             Debug.Log("A GridManager wasn't found in the scene!");
             return;
         }
-        instance.StartCoroutine(instance.ScanAGrid(Grid));
-    }
-
-    /// <summary>
-    /// Scan a specific grid in the grid array.
-    /// </summary>
-    /// <param name="grid">The grid that is going to be scanned.</param>
-    public static void ScanGrid(GridGraph grid)
-    {
-        if (instance == null)
+        if (grid == null)
         {
-            Debug.Log("A GridManager wasn't found in the scene!");
-            return;
+            grid = Grid;
         }
         instance.StartCoroutine(instance.ScanAGrid(grid));
     }
@@ -350,6 +308,4 @@ public class GridManager : MonoBehaviour
         grid.OnScanDone();
         isScanning = false;
     }
-
-    #endregion Methods
 }

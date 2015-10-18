@@ -4,16 +4,10 @@ using UnityEngine;
 [CustomEditor(typeof(AdvancedAI))]
 public class AdvancedAIEditor : Editor
 {
-    #region Fields
-
     private AdvancedAI _target;
 
     private bool ShowData = true;
     private bool ShowSpecs;
-
-    #endregion Fields
-
-    #region Methods
 
     public override void OnInspectorGUI()
     {
@@ -27,7 +21,10 @@ public class AdvancedAIEditor : Editor
             EditorGUILayout.LabelField("Animal Size: " + _target.Size);
             EditorGUILayout.LabelField("Has Path: " + (_target.hasPath));
             EditorGUILayout.LabelField("Animal State: " + _target.AIState);
-            EditorGUILayout.LabelField("Time till automated noise: " + Mathf.Round(-1f * _target.TillNoise) + "s");
+            if (_target.automatedNoise)
+            {
+                EditorGUILayout.LabelField("Time till automated noise: " + Mathf.Round(-1f * _target.TillNoise) + "s");
+            }
             if (_target.FlockAnimal)
             {
                 EditorGUILayout.LabelField("Flock ID: " + _target.FlockID);
@@ -60,6 +57,7 @@ public class AdvancedAIEditor : Editor
                 _target.minFlockSize = EditorGUILayout.IntSlider(new GUIContent("Min Flock Size"), _target.minFlockSize, 2, 100);
                 _target.maxFlockSize = EditorGUILayout.IntSlider(new GUIContent("Max Flock Size"), _target.maxFlockSize, _target.minFlockSize, 100);
             }
+            _target.automatedNoise = EditorGUILayout.Toggle(new GUIContent("Auto Noise", "Play alert sound from time to time."), _target.automatedNoise);
             _target.AlertSound = (AudioClip)EditorGUILayout.ObjectField("Alert Sound: ", _target.AlertSound, typeof(AudioClip), false);
         }
     }
@@ -68,6 +66,4 @@ public class AdvancedAIEditor : Editor
     {
         Repaint();
     }
-
-    #endregion Methods
 }

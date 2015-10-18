@@ -1,15 +1,9 @@
-﻿using Pathfinding; //Add the custom classes and other stuff, this should be included in every script that is using Pathfinding
+﻿using OnePathfinding; //Add the custom classes and other stuff, this should be included in every script that is using Pathfinding
 using UnityEngine;
 
 public class SimpleAI : MonoBehaviour
 {
     //This is a simple AI Controller, use AI if you want to learn the advanced features.
-
-    #region Fields
-
-    //Distance to waypoint before switching to the next one,
-    //Don't make this 0.0 as there might be some offsets.
-    public int nextWaypoint;
 
     //The speed at which the AI will move.
     public float speed;
@@ -20,12 +14,12 @@ public class SimpleAI : MonoBehaviour
     //The current waypoint
     private int currentWay = 0;
 
+    //Distance to waypoint before switching to the next one,
+    //Don't make this 0.0 as there might be some offsets.
+    private int nextWaypoint;
+
     //The currently active path
     private Path path;
-
-    #endregion Fields
-
-    #region Methods
 
     private void FixedUpdate()
     {
@@ -65,8 +59,9 @@ public class SimpleAI : MonoBehaviour
     private void Start()
     {
         //GridManager.RequestPath(starting point, ending point, OnPathFound, randomString);
-        GridManager.RequestPath(transform.position, target.transform.position, OnPathComplete, gameObject.GetHashCode().ToString());
+        if (target != null)
+        {
+            GridManager.RequestPath(transform.position, target.transform.position, OnPathComplete);
+        }
     }
-
-    #endregion Methods
 }

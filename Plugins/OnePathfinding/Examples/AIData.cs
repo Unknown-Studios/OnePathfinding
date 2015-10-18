@@ -3,8 +3,6 @@ using UnityEngine;
 
 public class AIData : MonoBehaviour
 {
-    #region Fields
-
     public float Health = 100.0f;
 
     public Vector3 Home;
@@ -13,10 +11,6 @@ public class AIData : MonoBehaviour
     public bool Respawn = true;
 
     private int Seconds;
-
-    #endregion Fields
-
-    #region Methods
 
     private void KillMe()
     {
@@ -66,6 +60,4 @@ public class AIData : MonoBehaviour
             KillMe();
         }
     }
-
-    #endregion Methods
 }

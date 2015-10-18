@@ -1,4 +1,4 @@
-﻿using Pathfinding;
+﻿using OnePathfinding;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -6,18 +6,12 @@ using UnityEngine;
 [CustomEditor(typeof(GridManager))]
 public class GMEditor : Editor
 {
-    #region Fields
-
     public static long lastUpdateTick;
     public static string[] layerNames;
     public static List<int> layerNumbers;
     public static List<string> layers;
     public bool[] current;
     private GridManager GM;
-
-    #endregion Fields
-
-    #region Methods
 
     public LayerMask LayerMaskField(string label, LayerMask selected, bool showSpecial)
     {
@@ -71,7 +65,16 @@ public class GMEditor : Editor
     public override void OnInspectorGUI()
     {
         GM = (GridManager)target;
-        if (current == null)
+        if (GM == null)
+        {
+            return;
+        }
+        else if (GM.grid == null)
+        {
+            GM.grid = new List<GridGraph>();
+        }
+
+        if (current == null || current.Length != GM.grid.Count)
         {
             current = new bool[GM.grid.Count];
         }
@@ -85,10 +88,6 @@ public class GMEditor : Editor
 
         GUILayout.Space(10f);
         EditorGUILayout.LabelField("Grids:", EditorStyles.boldLabel);
-        if (current.Length != GM.grid.Count)
-        {
-            current = new bool[GM.grid.Count];
-        }
 
         for (int i = 0; i < GM.grid.Count; i++)
         {
@@ -140,6 +139,4 @@ public class GMEditor : Editor
     {
         Repaint();
     }
-
-    #endregion Methods
 }

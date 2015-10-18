@@ -1,4 +1,4 @@
-﻿using Pathfinding;
+﻿using OnePathfinding;
 using System.Collections;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -7,19 +7,19 @@ using Random = UnityEngine.Random;
 [RequireComponent(typeof(AudioSource))]
 public class AdvancedAI : MonoBehaviour
 {
-    #region Fields
-
     [HideInInspector]
     public GameObject _target;
 
     public CurrentAIState AIState;
     public AudioClip AlertSound;
+    public bool automatedNoise;
     public float Damage;
     public bool FlockAnimal;
     public int FlockID;
     public GameObject FlockMember;
     public int FlockSize;
     public bool Flying = false;
+    public int HungerLevel;
     public bool IsMaster;
 
     [HideInInspector]
@@ -56,10 +56,6 @@ public class AdvancedAI : MonoBehaviour
     private float RefreshRate = 2f;
     private GameObject t;
 
-    #endregion Fields
-
-    #region Enums
-
     /// <summary>
     /// Type of alert
     /// </summary>
@@ -84,13 +80,8 @@ public class AdvancedAI : MonoBehaviour
     public enum CurrentAIState
     {
         Idling = 0,
-        GoingHome = 1,
-        FindingFood = 2
+        GoingHome = 1
     }
-
-    #endregion Enums
-
-    #region Properties
 
     /// <summary>
     /// Returns whether or not the ai component has a path.
@@ -154,10 +145,6 @@ public class AdvancedAI : MonoBehaviour
         }
     }
 
-    #endregion Properties
-
-    #region Methods
-
     /// <summary>
     /// Alerts the master of a nearby enemy.
     /// </summary>
@@ -194,11 +181,7 @@ public class AdvancedAI : MonoBehaviour
     /// <returns>The distance to the master. Returns -1 if no master is found.</returns>
     public float DistanceMaster()
     {
-        if (master == null || !FlockAnimal)
-        {
-            return -1f;
-        }
-        if (master != null && path != null)
+        if (master != null && path != null && FlockAnimal)
         {
             return Vector3.Distance(master.transform.position, path.Destination);
         }
@@ -211,16 +194,7 @@ public class AdvancedAI : MonoBehaviour
     /// <param name="end">The Vector3 location.</param>
     public void FindAPath(Vector3 end)
     {
-        GridManager.RequestPath(transform.position, end, OnPathComplete, gameObject.GetHashCode().ToString());
-    }
-
-    /// <summary>
-    /// Find a path to a specific transform.
-    /// </summary>
-    /// <param name="end">The transform of the location.</param>
-    public void FindAPath(Transform end)
-    {
-        GridManager.RequestPath(transform.position, end.position, OnPathComplete, gameObject.GetHashCode().ToString());
+        GridManager.RequestPath(transform.position, end, OnPathComplete);
     }
 
     /// <summary>
@@ -416,29 +390,13 @@ public class AdvancedAI : MonoBehaviour
                 target = FindClosest();
                 if (target != null)
                 {
-                    if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AdvancedAI>().Size > Size))
-                    {
-                        Vector3 loc = FindOpposite(target.transform.position);
-                        FindAPath(loc);
-                    }
-                    else
-                    {
-                        FindAPath(target.transform.position);
-                    }
-                    return;
+                    target = Smell();
                 }
-                target = Smell();
-                if (target != null)
+
+                if (target != null && 100.0f - Data.Hunger <= target.GetComponent<AdvancedAI>().Size)
                 {
-                    if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AdvancedAI>().Size > Size))
-                    {
-                        Vector3 loc = FindOpposite(target.transform.position);
-                        FindAPath(loc);
-                    }
-                    else
-                    {
-                        FindAPath(target.transform.position);
-                    }
+                    FindAPath(target.transform.position);
+                    return;
                 }
 
                 if (AIState == CurrentAIState.Idling)
@@ -471,15 +429,6 @@ public class AdvancedAI : MonoBehaviour
                     }
                     return;
                 }
-                else if (AIState == CurrentAIState.FindingFood)
-                {
-                    target = FindClosest();
-                    if (target != null)
-                    {
-                        FindAPath(target.transform.position);
-                    }
-                    return;
-                }
             }
             else
             {
@@ -508,19 +457,22 @@ public class AdvancedAI : MonoBehaviour
 
     private IEnumerator NoiseMaker()
     {
-        float LastNoise = 0f;
-        float ran = Random.Range(0.0f, 100.0f);
-        while (true)
+        if (automatedNoise)
         {
-            TillNoise = (Time.realtimeSinceStartup - ran) - LastNoise;
-            if (Time.realtimeSinceStartup - LastNoise > ran)
+            float LastNoise = 0f;
+            float ran = Random.Range(0.0f, 100.0f);
+            while (true)
             {
-                audio.clip = AlertSound;
-                //audio.Play();
-                LastNoise = Time.realtimeSinceStartup;
-                ran = Random.Range(0.0f, 600.0f);
+                TillNoise = (Time.realtimeSinceStartup - ran) - LastNoise;
+                if (Time.realtimeSinceStartup - LastNoise > ran)
+                {
+                    audio.clip = AlertSound;
+                    audio.Play();
+                    LastNoise = Time.realtimeSinceStartup;
+                    ran = Random.Range(0.0f, 600.0f);
+                }
+                yield return null;
             }
-            yield return null;
         }
     }
 
@@ -616,6 +568,34 @@ public class AdvancedAI : MonoBehaviour
             }
         }
         return null;
+    }
+
+    private void SpawnFlockMember()
+    {
+        if (FlockAnimal)
+        {
+            FlockSize = Random.Range(minFlockSize, maxFlockSize);
+
+            int o = 0;
+            while (o < FlockSize)
+            {
+                Vector3 r = new Vector3(Random.Range(-10f, 10f), 0, Random.Range(-10f, 10f));
+                GameObject bo = null;
+                if (FlockMember != null)
+                {
+                    bo = (GameObject)Instantiate(FlockMember, transform.position + r, Quaternion.identity);
+                }
+                else
+                {
+                    bo = (GameObject)Instantiate(gameObject, transform.position + r, Quaternion.identity);
+                }
+                bo.GetComponent<AdvancedAI>().master = gameObject;
+                bo.GetComponent<AdvancedAI>().FlockID = FlockID;
+                bo.name = bo.name.Replace("(Clone)", "");
+
+                o++;
+            }
+        }
     }
 
     private void Start()
@@ -728,10 +708,6 @@ public class AdvancedAI : MonoBehaviour
                 {
                     AIState = CurrentAIState.Idling;
                 }
-                else if (Data.Hunger < 20)
-                {
-                    AIState = CurrentAIState.FindingFood;
-                }
                 else if (AIState == CurrentAIState.Idling)
                 {
                     if (chan < 5f)
@@ -747,6 +723,4 @@ public class AdvancedAI : MonoBehaviour
             yield return null;
         }
     }
-
-    #endregion Methods
 }

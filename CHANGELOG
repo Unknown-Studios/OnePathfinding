@@ -1,3 +1,12 @@
+# Version 1.1.3
+- Renamed the namespace to "OnePathfinding" instead of "PathFinding"
+- Added Step by step tutorial to package.
+- Moved flock spawning from AISpawner to the AdvancedAI.
+- Removed unused code.
+- Added more advanced finding food state.
+- Removed regions, as they weren't used for anything.
+- Added feature for automated noise. (A sound that plays from time to time)
+
 # Version 1.1.2
 - Fixed two compiler errors when building.
 - Added Spectator mode to example scene.
@@ -9,7 +18,7 @@
 # Version 1.1.0
 - Fixed Scared animals not fleeing combat, but engaging it.
 - Added Audio sensor support.
-	- Added AudioScript.cs which can be attached to external audio sources.
+- Added AudioScript.cs which can be attached to external audio sources.
 - Added support for spawning multiple gameobjects from Test.cs script.
 - Added option to change how many AIs is spawned by Test.cs
 - Added option on AIData to enable/disable respawning.

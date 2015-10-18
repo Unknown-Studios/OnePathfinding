@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Pathfinding
+namespace OnePathfinding
 {
     public interface IHeapItem<T> : IComparable<T>
     {
@@ -211,7 +211,7 @@ namespace Pathfinding
 
         public void ScanNode(int x, int y)
         {
-            if (nodes == null || nodes.Length == 0)
+            if (nodes == null || nodes.Length == 0 || nodes.Length != (Mathf.RoundToInt(Size.x) * Mathf.RoundToInt(Size.y)))
             {
                 Update();
                 nodes = new Node[Mathf.RoundToInt(Size.x), Mathf.RoundToInt(Size.y)];

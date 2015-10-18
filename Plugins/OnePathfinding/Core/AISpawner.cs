@@ -2,13 +2,7 @@
 
 public class AISpawner : MonoBehaviour
 {
-    #region Fields
-
     public static AISpawner instance;
-
-    #endregion Fields
-
-    #region Methods
 
     /// <summary>
     /// Spawns a object at a position.
@@ -30,41 +24,7 @@ public class AISpawner : MonoBehaviour
 
         AdvancedAI ai = ob.GetComponent<AdvancedAI>();
         ob.transform.parent = gridTransform;
-
-        if (ai != null)
-        {
-            ob.name = ob.name.Replace("(Clone)", "");
-            if (ai.FlockAnimal)
-            {
-                int flockSize = Random.Range(ai.minFlockSize, ai.maxFlockSize);
-                ai.FlockSize = flockSize;
-
-                int o = 0;
-                while (o < flockSize)
-                {
-                    GameObject bo;
-                    if (ai.FlockMember != null)
-                    {
-                        bo = (GameObject)Instantiate(ai.FlockMember, ob.transform.position, Quaternion.identity);
-                    }
-                    else
-                    {
-                        bo = (GameObject)Instantiate(obj, ob.transform.position, Quaternion.identity);
-                    }
-                    bo.transform.parent = gridTransform;
-                    bo.GetComponent<AdvancedAI>().master = ob;
-                    bo.GetComponent<AdvancedAI>().FlockID = ai.FlockID;
-                    bo.name = bo.name.Replace("(Clone)", "");
-
-                    o++;
-                }
-            }
-        }
-        else
-        {
-            Debug.LogError("Can't spawn AIs without AI component.");
-            return;
-        }
+        ob.name = ob.name.Replace("(Clone)", "");
     }
 
     public static void Spawn(GameObject obj, int Amount)
@@ -88,39 +48,10 @@ public class AISpawner : MonoBehaviour
         while (i < Amount)
         {
             GameObject ob = (GameObject)Instantiate(obj, new Vector3(Random.Range(minX, maxX), 0, Random.Range(minY, maxY)), Quaternion.identity);
-
-            i++;
             AdvancedAI ai = ob.GetComponent<AdvancedAI>();
             ob.transform.parent = gridTransform;
 
-            if (ai != null)
-            {
-                ob.name = ob.name.Replace("(Clone)", "");
-                if (ai.FlockAnimal)
-                {
-                    int flockSize = Random.Range(ai.minFlockSize, ai.maxFlockSize);
-                    ai.FlockSize = flockSize;
-
-                    int o = 0;
-                    while (o < flockSize && i < Amount)
-                    {
-                        Vector3 r = new Vector3(Random.Range(0f, 10f), 0, Random.Range(0f, 10f));
-                        GameObject bo = (GameObject)Instantiate(obj, ob.transform.position + r, Quaternion.identity);
-                        bo.transform.parent = gridTransform;
-                        bo.GetComponent<AdvancedAI>().master = ob;
-                        bo.GetComponent<AdvancedAI>().FlockID = ai.FlockID;
-                        bo.name = bo.name.Replace("(Clone)", "");
-
-                        i++;
-                        o++;
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogError("Can't spawn AIs without AI component.");
-                return;
-            }
+            i++;
         }
     }
 
@@ -133,6 +64,4 @@ public class AISpawner : MonoBehaviour
     {
         instance = this;
     }
-
-    #endregion Methods
 }

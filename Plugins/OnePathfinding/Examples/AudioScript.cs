@@ -6,18 +6,12 @@ public class AudioScript : MonoBehaviour
     //This script is used for external alerting noises, for example an explosion.
     //If you want to use this script just attach it to the script that is going to make the sound.
 
-    #region Fields
-
     [Range(0, 1000)]
     public float SizeThreshold = 0f;
 
     private new AudioSource audio;
     private float audioValue;
     private float[] spectrum;
-
-    #endregion Fields
-
-    #region Methods
 
     private void AlertObjects()
     {
@@ -75,6 +69,4 @@ public class AudioScript : MonoBehaviour
             }
         }
     }
-
-    #endregion Methods
 }
