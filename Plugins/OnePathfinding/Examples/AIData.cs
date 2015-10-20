@@ -9,7 +9,6 @@ public class AIData : MonoBehaviour
 
     public float Hunger = 100.0f;
     public bool Respawn = true;
-
     private int Seconds;
 
     private void KillMe()

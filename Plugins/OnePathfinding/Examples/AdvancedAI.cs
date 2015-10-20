@@ -17,17 +17,16 @@ public class AdvancedAI : MonoBehaviour
     public bool FlockAnimal;
     public int FlockID;
     public GameObject FlockMember;
-    public int FlockSize;
+    public float Flyheight = 50.0f;
     public bool Flying = false;
-    public int HungerLevel;
     public bool IsMaster;
 
-    [HideInInspector]
     public GameObject master;
 
     public int maxFlockSize = 3;
     public int minFlockSize = 2;
     public float NoiseDistance = 100.0f;
+    public Path path = null;
     public bool RandomAddSpeed = true;
 
     public float Size;
@@ -41,20 +40,12 @@ public class AdvancedAI : MonoBehaviour
     private float AttackRange = 2.5f;
     private new AudioSource audio;
     private float audioValue;
-    private GameObject Closest;
-    private Vector3 currentWay;
     private int currentWaypoint = 0;
     private AIData Data;
 
-    private Vector3 flyTarget;
     private float LastAttack;
-    private float LastCheck = 0.0f;
-    private Vector3 MasterPosition;
-    private Path path = null;
-    private Vector3 pos;
     private float RandomSpeed;
     private float RefreshRate = 2f;
-    private GameObject t;
 
     /// <summary>
     /// Type of alert
@@ -316,13 +307,39 @@ public class AdvancedAI : MonoBehaviour
         currentWaypoint = 0;
     }
 
-    private Vector3 FindAirPath()
+    private void FindAirPath()
     {
-        Vector3 go = new Vector3(Random.Range(-ViewDistance, ViewDistance), 0, Random.Range(-ViewDistance, ViewDistance)) + transform.position;
-        Vector3 size = Terrain.activeTerrain.terrainData.size;
-        go.y = Terrain.activeTerrain.terrainData.GetInterpolatedHeight(go.x / size.x, go.z / size.z);
-        go.y += 100;
-        return go;
+        TerrainData td = Terrain.activeTerrain.terrainData;
+        path = new Path();
+        path.Vector3Path = new Vector3[1];
+        float min = -ViewDistance;
+        float max = ViewDistance;
+        Vector3 GridPos = new Vector3(Random.Range(min, max), 0, Random.Range(min, max));
+
+        if (IsMaster || !FlockAnimal)
+        {
+            path.Vector3Path[0] = transform.position + GridPos;
+        }
+        else if (master != null)
+        {
+            path.Vector3Path[0] = master.transform.position + GridPos;
+        }
+
+        path.Vector3Path[0].x = Mathf.Clamp(path.Vector3Path[0].x, 0, td.size.x);
+        path.Vector3Path[0].z = Mathf.Clamp(path.Vector3Path[0].z, 0, td.size.z);
+
+        float normX = path.Vector3Path[0].x / td.size.x;
+        float normY = path.Vector3Path[0].z / td.size.z;
+
+        path.Vector3Path[0].y = td.GetInterpolatedHeight(normX, normY) + Flyheight + Random.Range(-5f, 0f);
+    }
+
+    private void FindAirPath(Vector3 position)
+    {
+        path = new Path();
+        path.Vector3Path = new Vector3[1];
+
+        path.Vector3Path[0] = position;
     }
 
     /// <summary>
@@ -331,7 +348,7 @@ public class AdvancedAI : MonoBehaviour
     /// <returns>Returns the closest gameobject.</returns>
     private GameObject FindClosest()
     {
-        Closest = null;
+        GameObject Closest = null;
         Collider[] hitColliders = Physics.OverlapSphere(transform.position, ViewDistance);
         int i = 0;
         foreach (Collider collider in hitColliders)
@@ -366,7 +383,6 @@ public class AdvancedAI : MonoBehaviour
         offset.x = Mathf.Clamp(Mathf.Abs(offset.x) * 100f, -1.0f, 1.0f);
         offset.z = Mathf.Clamp(Mathf.Abs(offset.z) * 100f, -1.0f, 1.0f);
 
-        pos = transform.position - (offset * 50f);
         return transform.position - (offset * 50f);
     }
 
@@ -380,13 +396,21 @@ public class AdvancedAI : MonoBehaviour
                 LockTarget = false;
                 t = true;
             }
-            if (Flying)
-            {
-                flyTarget = FindAirPath();
-                return;
-            }
             else if (!LockTarget)
             {
+                if (Flying)
+                {
+                    if (target = FindClosest())
+                    {
+                        FindAirPath(target.transform.position);
+                    }
+                    if (path == null)
+                    {
+                        FindAirPath();
+                    }
+                    return;
+                }
+
                 target = FindClosest();
                 if (target != null)
                 {
@@ -434,7 +458,15 @@ public class AdvancedAI : MonoBehaviour
             {
                 if (target != null)
                 {
+                    //Check if target is still valid.
                     transform.LookAt(target.transform.position);
+                    if (Flying)
+                    {
+                        Vector3 rot = transform.rotation.eulerAngles;
+                        rot.x = 45;
+                        transform.rotation = Quaternion.Euler(rot);
+                    }
+
                     target = FindClosest();
                     if (target != null)
                     {
@@ -478,7 +510,6 @@ public class AdvancedAI : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.DrawCube(pos, Vector3.one);
         //Path
         if (GridManager.ShowPath && path != null)
         {
@@ -515,17 +546,19 @@ public class AdvancedAI : MonoBehaviour
                 Random.seed = se;
             }
 
-            //Smelling
-            if (Smell() != null)
+            if (!Flying)
             {
-                Gizmos.color = Color.red;
+                //Smelling
+                if (Smell() != null)
+                {
+                    Gizmos.color = Color.red;
+                }
+                else
+                {
+                    Gizmos.color = c;
+                }
+                Gizmos.DrawWireSphere(transform.position - (Wind.windVector3 * SmellDistance), SmellDistance);
             }
-            else
-            {
-                Gizmos.color = c;
-            }
-            Gizmos.DrawWireSphere(transform.position - (Wind.windVector3 * SmellDistance), SmellDistance);
-
             Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
 
             //Looking
@@ -547,6 +580,10 @@ public class AdvancedAI : MonoBehaviour
         {
             path = p;
             currentWaypoint = 0;
+            if (Flying)
+            {
+                FindAirPath();
+            }
         }
     }
 
@@ -574,7 +611,7 @@ public class AdvancedAI : MonoBehaviour
     {
         if (FlockAnimal)
         {
-            FlockSize = Random.Range(minFlockSize, maxFlockSize);
+            int FlockSize = Random.Range(minFlockSize, maxFlockSize);
 
             int o = 0;
             while (o < FlockSize)
@@ -625,8 +662,14 @@ public class AdvancedAI : MonoBehaviour
         {
             Size = 3;
         }
-
-        InvokeRepeating("FindPath", Random.Range(0.0f, RefreshRate), RefreshRate);
+        if (Flying)
+        {
+            InvokeRepeating("FindPath", Random.Range(0.0f, RefreshRate), RefreshRate / 2);
+        }
+        else
+        {
+            InvokeRepeating("FindPath", Random.Range(0.0f, RefreshRate), RefreshRate);
+        }
         StartCoroutine(UpdateState()); //Start state updater
         StartCoroutine(NoiseMaker());
 
@@ -654,24 +697,12 @@ public class AdvancedAI : MonoBehaviour
                 Attack(Damage);
             }
         }
-        if (Flying)
-        {
-            if (flyTarget != Vector3.zero)
-            {
-                transform.position = Vector3.MoveTowards(transform.position, flyTarget, Time.deltaTime * speed);
-                if (Vector3.Distance(transform.position, flyTarget) < 1.0f)
-                {
-                    flyTarget = Vector3.zero;
-                }
-            }
-            return;
-        }
         if (path == null)
         {
             return;
         }
 
-        if (Vector3.Distance(transform.position, currentWay) < 1.0f)
+        if (Vector3.Distance(transform.position, path.Vector3Path[currentWaypoint]) < 1.0f)
         {
             currentWaypoint++;
             if (currentWaypoint >= path.Vector3Path.Length)
@@ -680,24 +711,32 @@ public class AdvancedAI : MonoBehaviour
                 return;
             }
         }
-        currentWay = path.Vector3Path[currentWaypoint];
 
-        Vector3 rot = currentWay;
+        Vector3 rot = path.Vector3Path[currentWaypoint];
         rot.y = transform.position.y;
 
         transform.LookAt(rot);
+
+        if (Flying)
+        {
+            Vector3 roto = transform.rotation.eulerAngles;
+            roto.x = 45;
+            transform.rotation = Quaternion.Euler(roto);
+        }
+
         if (RandomAddSpeed)
         {
-            transform.position = Vector3.MoveTowards(transform.position, currentWay, Time.deltaTime * (speed + RandomSpeed));
+            transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.deltaTime * (speed + RandomSpeed));
         }
         else
         {
-            transform.position = Vector3.MoveTowards(transform.position, currentWay, Time.deltaTime * speed);
+            transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.deltaTime * speed);
         }
     }
 
     private IEnumerator UpdateState()
     {
+        float LastCheck = 0.0f;
         while (true)
         {
             if (Time.realtimeSinceStartup - LastCheck >= 30.0f)

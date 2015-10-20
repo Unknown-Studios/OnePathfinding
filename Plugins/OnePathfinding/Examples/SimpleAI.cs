@@ -5,6 +5,10 @@ public class SimpleAI : MonoBehaviour
 {
     //This is a simple AI Controller, use AI if you want to learn the advanced features.
 
+    //Distance to waypoint before switching to the next one,
+    //Don't make this 0.0 as there might be some offsets.
+    public float nextWaypoint = 2f;
+
     //The speed at which the AI will move.
     public float speed;
 
@@ -13,10 +17,6 @@ public class SimpleAI : MonoBehaviour
 
     //The current waypoint
     private int currentWay = 0;
-
-    //Distance to waypoint before switching to the next one,
-    //Don't make this 0.0 as there might be some offsets.
-    private int nextWaypoint;
 
     //The currently active path
     private Path path;

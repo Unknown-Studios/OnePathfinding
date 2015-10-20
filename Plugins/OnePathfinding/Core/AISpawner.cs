@@ -22,7 +22,6 @@ public class AISpawner : MonoBehaviour
 
         GameObject ob = (GameObject)Instantiate(obj, position, Quaternion.identity);
 
-        AdvancedAI ai = ob.GetComponent<AdvancedAI>();
         ob.transform.parent = gridTransform;
         ob.name = ob.name.Replace("(Clone)", "");
     }
@@ -48,7 +47,6 @@ public class AISpawner : MonoBehaviour
         while (i < Amount)
         {
             GameObject ob = (GameObject)Instantiate(obj, new Vector3(Random.Range(minX, maxX), 0, Random.Range(minY, maxY)), Quaternion.identity);
-            AdvancedAI ai = ob.GetComponent<AdvancedAI>();
             ob.transform.parent = gridTransform;
 
             i++;
