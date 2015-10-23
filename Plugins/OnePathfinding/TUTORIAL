@@ -1,0 +1,124 @@
+# ------------ About ------------
+
+OnePathfinding is a pathfinding system using the A* algorithm
+to find the best possible way from point A to point B. 
+OnePathfinding is using systems like Queueing for better 
+performance on the go. Its examples contains advanced detection
+systems, these being Audio, Smelling and Viewing detection.
+
+# ------------ Setup ------------
+
+1.	Create a terrain for the objects to move on.
+ 
+2.	Create an empty gameobject, this gameobject will work as your manager. 
+	Make sure that you are never going to end up with two of these components.
+	
+3.	Attach the GridManager script from 
+	Plugins/OnePathfinding/Core/GridManager.cs
+	or
+	use the already setup prefab called GameController under 
+	Plugins/OnePathfinding/Prefab/GameController.prefab
+
+3.5. (Optional) Attach the AISpawner component to the GameController, 
+	this can be used for spawning AIs with ease. You can then use the AISpawner.Spawn() 
+	function to spawn animals, for an example on spawning these try taking a look at the 
+	test.cs in Plugins/OnePathfinding/Scene/
+	
+
+4.	Create a grid by clicking on Add Grid on the gridmanager component, 
+	then fill out the options for it.
+	
+5.	Attach the AdvancedAI or SimpleAI scripts to the 
+	object you want to become an AI gameobject.
+
+6.	If you added the AISpawner and Test script the 
+	AIs should spawn and begin to move around, when the 
+	game is started.
+
+If the steps was followed correctly, the AI should be 
+moving by now. If this isn't the case, please contact 
+us. Support information can be found further down in 
+this file.
+
+# ------------ File Description ------------
+This is a description of each of the main files, descriping what the file does and how to use it:
+
+GridManager.cs:
+	This file is used for managing a list of grids
+	and changing the options for every grid. It's 
+	important that there isn't two of this component
+	in one scene.
+	
+Pathfinding.cs:
+	This file contains the namespace that is used for
+	finding the path. This file should not be edited
+	unless you know what you are doing. This namespace
+	should be used in every script that is going to use
+	the pathfinding algorithms.
+	
+SimpleAI.cs:
+	This file is used mainly for learning purposes, you
+	attach this file to a gameobject and drag another 
+	active gameobject to the target variable. When the game
+	is started it will move towards the gameobject "target"
+	
+AdvancedAI.cs:
+	This file is the main example, this file contains the out
+	of the box detection system, this script can be used for 
+	further learning the API.
+	
+AntiFly.cs:
+	This file is used to prevent the AI from going off the
+	terrain. This file doesn't have any variables and just
+	needs to be attached to the gameobject to work.
+	
+Wind.cs:
+	This file will be added automatically added with 
+	gridmanager, it has 1 variable:
+		Repeat Rate: The repeat rate is how often the 
+		wind direction is updated in seconds. So if it 
+		is 30 it will update the direction of the wind
+		every 30 seconds.
+		
+AudioScript.cs:
+	The audioscript is used to attach to the external 
+	audio sources that is going to affect the AIs.
+	
+AIData.cs:
+	This script is used for holding all of the AIs data.
+	This is Health, hunger and home location(Spawn Location)
+	
+Documentation for these files will be added to the website shortly.
+
+# ------------ Support ------------
+
+Webplayer: http://unknown-studios.com/OnePathfinding.html
+Website: http://unknown-studios.com#onepath
+Forum: http://forum.unknown-studios.com/topic.php?id=3
+Unity Forum: http://forum.unity3d.com/threads/onepathfinding.357444/
+Mail: oneunknownstudio@gmail.com
+
+
+# ------------ License ------------
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Unknown-Studios
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

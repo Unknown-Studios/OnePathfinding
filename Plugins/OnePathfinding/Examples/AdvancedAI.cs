@@ -1,5 +1,7 @@
 ﻿using OnePathfinding;
 using System.Collections;
+using System.Linq;
+
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -81,11 +83,7 @@ public class AdvancedAI : MonoBehaviour
     {
         get
         {
-            if (path != null)
-            {
-                return true;
-            }
-            return false;
+            return path != null;
         }
     }
 
@@ -101,22 +99,20 @@ public class AdvancedAI : MonoBehaviour
         set
         {
             _target = value;
-            if (value != null)
-            {
-                if (master != null)
-                {
-                    if (_target.GetComponent<AdvancedAI>() != null && ((_target.GetComponent<AdvancedAI>().Size > Size)))
-                    {
-                        Alert(_target, AlertType.Danger);
-                    }
-                    else
-                    {
-                        Alert(_target, AlertType.Target);
-                    }
-                }
 
-                LockTarget = true;
+            if (master != null)
+            {
+                if (master.GetComponent<AdvancedAI>().isDanger(_target))
+                {
+                    master.GetComponent<AdvancedAI>().Alert(value, AlertType.Target);
+                }
+                else
+                {
+                    master.GetComponent<AdvancedAI>().Alert(value, AlertType.Target);
+                }
             }
+
+            LockTarget = value != null;
         }
     }
 
@@ -131,7 +127,7 @@ public class AdvancedAI : MonoBehaviour
             _LockTarget = value;
             if (!value)
             {
-                target = null;
+                _target = null;
             }
         }
     }
@@ -254,14 +250,17 @@ public class AdvancedAI : MonoBehaviour
 
     private float AnalyzeSound()
     {
-        float max = 0;
-        float[] samples = new float[1024];
-        audio.GetOutputData(samples, 0);
-        for (int i = 0; i < samples.Length; i++)
+        float max = 0.0f;
+        if (audio.clip != null)
         {
-            if (samples[i] > max)
+            float[] samples = new float[128];
+            audio.GetOutputData(samples, 0);
+            foreach (float f in samples)
             {
-                max = samples[i];
+                if (f > max)
+                {
+                    max = f;
+                }
             }
         }
         return max;
@@ -279,10 +278,11 @@ public class AdvancedAI : MonoBehaviour
         }
         if (target.tag == "AI")
         {
-            target.GetComponent<AIData>().Health -= dmg;
-            if (target.GetComponent<AIData>().Health == 0)
+            AIData targetData = target.GetComponent<AIData>();
+            targetData.Health -= dmg;
+            if (targetData.Health == 0)
             {
-                GetComponent<AIData>().Hunger += 10 * target.GetComponent<AdvancedAI>().Size;
+                Data.Hunger += 10 * target.GetComponent<AdvancedAI>().Size;
             }
         }
         else if (target.tag == "Player")
@@ -349,9 +349,8 @@ public class AdvancedAI : MonoBehaviour
     private GameObject FindClosest()
     {
         GameObject Closest = null;
-        Collider[] hitColliders = Physics.OverlapSphere(transform.position, ViewDistance);
         int i = 0;
-        foreach (Collider collider in hitColliders)
+        foreach (Collider collider in Physics.OverlapSphere(transform.position, ViewDistance))
         {
             if (collider.transform != transform && (collider.tag == "Player" || collider.tag == "AI"))
             {
@@ -454,37 +453,66 @@ public class AdvancedAI : MonoBehaviour
                     return;
                 }
             }
-            else
-            {
-                if (target != null)
-                {
-                    //Check if target is still valid.
-                    transform.LookAt(target.transform.position);
-                    if (Flying)
-                    {
-                        Vector3 rot = transform.rotation.eulerAngles;
-                        rot.x = 45;
-                        transform.rotation = Quaternion.Euler(rot);
-                    }
+        }
+    }
 
-                    target = FindClosest();
-                    if (target != null)
-                    {
-                        if (Type == AnimalType.scared || (target.tag == "AI" && target.GetComponent<AdvancedAI>().Size > Size))
-                        {
-                            Vector3 loc = FindOpposite(target.transform.position);
-                            FindAPath(loc);
-                        }
-                        else
-                        {
-                            FindAPath(target.transform.position);
-                        }
-                        return;
-                    }
-                }
-                LockTarget = false;
+    private void FixedUpdate()
+    {
+        if (path == null)
+        {
+            return;
+        }
+
+        if (Vector3.Distance(transform.position, path.Vector3Path[currentWaypoint]) < 1.0f)
+        {
+            currentWaypoint++;
+            if (currentWaypoint >= path.Vector3Path.Length)
+            {
+                EndOfPath();
+                return;
             }
         }
+
+        if (Flying)
+        {
+            Vector3 roto = transform.rotation.eulerAngles;
+            roto.x = 45;
+            transform.rotation = Quaternion.Euler(roto);
+        }
+        else
+        {
+            Vector3 rot = path.Vector3Path[currentWaypoint];
+            rot.y = transform.position.y;
+
+            transform.LookAt(rot);
+        }
+
+        if (RandomAddSpeed)
+        {
+            transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.fixedDeltaTime * (speed + RandomSpeed));
+        }
+        else
+        {
+            transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.fixedDeltaTime * speed);
+        }
+    }
+
+    private bool isDanger(GameObject target)
+    {
+        AdvancedAI targetAI = target.GetComponent<AdvancedAI>();
+        if (targetAI == null)
+        {
+            return true;
+        }
+        if (Size < targetAI.Size && targetAI.Type == AnimalType.aggresive) //Be scared if the animal is bigger and aggresive
+        {
+            return true;
+        }
+        else if (Size < targetAI.Size + 20 && targetAI.Type == AnimalType.scared) //Be scared if much bigger than me.
+        {
+            return true;
+        }
+        return false;
     }
 
     private IEnumerator NoiseMaker()
@@ -696,41 +724,6 @@ public class AdvancedAI : MonoBehaviour
                 LastAttack = Time.realtimeSinceStartup;
                 Attack(Damage);
             }
-        }
-        if (path == null)
-        {
-            return;
-        }
-
-        if (Vector3.Distance(transform.position, path.Vector3Path[currentWaypoint]) < 1.0f)
-        {
-            currentWaypoint++;
-            if (currentWaypoint >= path.Vector3Path.Length)
-            {
-                EndOfPath();
-                return;
-            }
-        }
-
-        Vector3 rot = path.Vector3Path[currentWaypoint];
-        rot.y = transform.position.y;
-
-        transform.LookAt(rot);
-
-        if (Flying)
-        {
-            Vector3 roto = transform.rotation.eulerAngles;
-            roto.x = 45;
-            transform.rotation = Quaternion.Euler(roto);
-        }
-
-        if (RandomAddSpeed)
-        {
-            transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.deltaTime * (speed + RandomSpeed));
-        }
-        else
-        {
-            transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.deltaTime * speed);
         }
     }
 

@@ -5,15 +5,15 @@ public class Wind : MonoBehaviour
 {
     public static float speed;
 
-    public Vector2 _wind;
-
     /// <summary>
     /// The rate at which the wind direction updates. (In seconds)
     /// </summary>
     public int RepeatRate;
 
     private static Wind _instance;
-    
+
+    private Vector2 _wind;
+
     public static Wind instance
     {
         get
