@@ -1,8 +1,14 @@
 ﻿using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// This script is used to have an impact on the smelling.
+/// </summary>
 public class Wind : MonoBehaviour
 {
+    /// <summary>
+    /// The speed at which the wind moves.
+    /// </summary>
     public static float speed;
 
     /// <summary>
@@ -10,10 +16,18 @@ public class Wind : MonoBehaviour
     /// </summary>
     public int RepeatRate;
 
+    /// <summary>
+    /// A instance to this component.
+    /// </summary>
     private static Wind _instance;
 
+    /// <summary    /// The current wind direction
+    /// </summary>
     private Vector2 _wind;
 
+    /// <summary>
+    /// Instance of this component.
+    /// </summary>
     public static Wind instance
     {
         get
@@ -22,6 +36,9 @@ public class Wind : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Static reference to the wind.
+    /// </summary>
     public static Vector2 wind
     {
         get
@@ -38,6 +55,9 @@ public class Wind : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Wind reference as a vector3.
+    /// </summary>
     public static Vector3 windVector3
     {
         get
@@ -46,6 +66,9 @@ public class Wind : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called on initialization of this component.
+    /// </summary>
     public void Awake()
     {
         if (FindObjectsOfType<Wind>().Length > 1)
@@ -55,11 +78,18 @@ public class Wind : MonoBehaviour
         _instance = FindObjectOfType<Wind>();
     }
 
+    /// <summary>
+    /// Called on initialization of this component.
+    /// </summary>
     public void Start()
     {
         InvokeRepeating("UW", 0.0f, RepeatRate);
     }
 
+    /// <summary>
+    /// Updates the winds direction.
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator UpdateWind()
     {
         Vector2 NewWind = new Vector2((Random.value * 2.0f) - 1.0f, (Random.value * 2.0f) - 1.0f);
@@ -72,6 +102,9 @@ public class Wind : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Used to call the UpdateWind coroutine.
+    /// </summary>
     private void UW()
     {
         StartCoroutine(UpdateWind());

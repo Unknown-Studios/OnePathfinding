@@ -5,48 +5,172 @@ using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
+/// <summary>
+/// The main example in the OnePathfinding solution.
+/// </summary>
 [RequireComponent(typeof(AIData))]
 [RequireComponent(typeof(AudioSource))]
 public class AdvancedAI : MonoBehaviour
 {
+    /// <summary>
+    /// Current target.
+    /// </summary>
     [HideInInspector]
     public GameObject _target;
 
+    /// <summary>
+    /// The AIs current state of behavior.
+    /// </summary>
     public CurrentAIState AIState;
+
+    /// <summary>
+    /// The sound that the AI will make when it is going to alert an animal.
+    /// </summary>
     public AudioClip AlertSound;
+
+    /// <summary>
+    /// Whether or not to play an automated noise.
+    /// </summary>
     public bool automatedNoise;
+
+    /// <summary>
+    /// The damage this AI will do if it gets close enough to the target.
+    /// </summary>
     public float Damage;
+
+    /// <summary>
+    /// If the animal is a flock animal or not.
+    /// </summary>
     public bool FlockAnimal;
+
+    /// <summary>
+    /// An ID used to identify the flock leader and it's members.
+    /// </summary>
     public int FlockID;
+
+    /// <summary>
+    /// If you want a custom GameObject to be the child in a flock, if you say have a alpha wolf
+    /// with a different model than the rest of the, you would then set this to child's model.
+    /// </summary>
     public GameObject FlockMember;
+
+    /// <summary>
+    /// The height at which a flying AI will fly at.
+    /// </summary>
     public float Flyheight = 50.0f;
+
+    /// <summary>
+    /// Whether it is a flying animal or not.
+    /// </summary>
     public bool Flying = false;
+
+    /// <summary>
+    /// This is used to easily identify if this AI is the master of it's flock.
+    /// </summary>
     public bool IsMaster;
 
+    /// <summary>
+    /// A reference to the master GameObject. NULL if not in a flock or if this is the leader.
+    /// </summary>
     public GameObject master;
 
+    /// <summary>
+    /// The minimum size this AI's flock can have.
+    /// </summary>
     public int maxFlockSize = 3;
+
+    /// <summary>
+    /// The maximum size this AI's flock can have.
+    /// </summary>
     public int minFlockSize = 2;
+
+    /// <summary>
+    /// The maximum distance at which this animals noise can be heard.
+    /// </summary>
     public float NoiseDistance = 100.0f;
+
+    /// <summary>
+    /// A reference to this AIs current path.
+    /// </summary>
     public Path path = null;
+
+    /// <summary>
+    /// If true it will add a random variable between -1 and 1 to the speed, this is used to add
+    /// some variation to the AIs
+    /// </summary>
     public bool RandomAddSpeed = true;
 
+    /// <summary>
+    /// This animals models area.
+    /// </summary>
     public float Size;
 
+    /// <summary>
+    /// The distance at which this animal can smell at.
+    /// </summary>
     public float SmellDistance = 5f;
+
+    /// <summary>
+    /// The speed at which this animal moves at.
+    /// </summary>
     public float speed = 6.0F;
+
+    /// <summary>
+    /// The time remaining until this animal will make a noise again.
+    /// </summary>
     public float TillNoise;
+
+    /// <summary>
+    /// This animals type, whether it is aggressive, passive(Coming soon) or scared
+    /// </summary>
     public AnimalType Type;
+
+    /// <summary>
+    /// The distance at which this animal can see at.
+    /// </summary>
     public float ViewDistance = 50.0f;
+
+    //Locks the current target.
     private bool _LockTarget = false;
+
+    /// <summary>
+    /// The distance from the target before it is a possibility to attack the target.
+    /// </summary>
     private float AttackRange = 2.5f;
+
+    /// <summary>
+    /// A reference to the attached AudioSource
+    /// </summary>
     private new AudioSource audio;
+
+    /// <summary>
+    /// The current maximum distance at which this animals noise can be heard.
+    /// </summary>
     private float audioValue;
+
+    /// <summary>
+    /// An index to which waypoint in the path.Vector3Path.
+    /// </summary>
     private int currentWaypoint = 0;
+
+    /// <summary>
+    /// A reference to
+    /// </summary>
     private AIData Data;
 
+    /// <summary>
+    /// The last time this animal attacked, used to offset continuous attacks.
+    /// </summary>
     private float LastAttack;
+
+    /// <summary>
+    /// The speed at which to add to the current speed.
+    /// </summary>
     private float RandomSpeed;
+
+    /// <summary>
+    /// The RefreshRate is how long between each check for update.
+    /// </summary>
     private float RefreshRate = 2f;
 
     /// <summary>
@@ -59,7 +183,7 @@ public class AdvancedAI : MonoBehaviour
     }
 
     /// <summary>
-    /// What type of animal it is, whether it is agressive or not.
+    /// This animals type, whether it is aggressive, passive(Coming soon) or scared
     /// </summary>
     public enum AnimalType
     {
@@ -77,7 +201,7 @@ public class AdvancedAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns whether or not the ai component has a path.
+    /// Returns whether or not the AI component has a path.
     /// </summary>
     public bool hasPath
     {
@@ -185,13 +309,13 @@ public class AdvancedAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Checks if this gameobject and the subject is from the same flock.
+    /// Checks if this GameObject and the subject is from the same flock.
     /// </summary>
-    /// <param name="subject">The gameobject to test against.</param>
+    /// <param name="subject">The GameObject to test against.</param>
     /// <returns>Bool, telling whether or not they are from the same flock.</returns>
     public bool IsFlockMember(GameObject subject)
     {
-        if (subject.tag == "AI")
+        if (subject.GetComponent<AdvancedAI>())
         {
             if (gameObject.transform == subject.transform || subject.GetComponent<AdvancedAI>().FlockID == FlockID)
             {
@@ -226,7 +350,7 @@ public class AdvancedAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Alert all the surounding objects, when the object makes a noise.
+    /// Alert all the surrounding objects, when the object makes a noise.
     /// </summary>
     private void AlertObjects()
     {
@@ -241,13 +365,17 @@ public class AdvancedAI : MonoBehaviour
             {
                 continue;
             }
-            if (col.tag == "AI" && col.GetComponent<AdvancedAI>().Size < Size)
+            if (col.GetComponent<AdvancedAI>() && col.GetComponent<AdvancedAI>().Size < Size)
             {
                 col.GetComponent<AdvancedAI>().Alert(col.gameObject, AlertType.Danger);
             }
         }
     }
 
+    /// <summary>
+    /// Used to analyze the sound to find out if it would alert other objects.
+    /// </summary>
+    /// <returns></returns>
     private float AnalyzeSound()
     {
         float max = 0.0f;
@@ -276,7 +404,7 @@ public class AdvancedAI : MonoBehaviour
         {
             return;
         }
-        if (target.tag == "AI")
+        if (target.GetComponent<AdvancedAI>())
         {
             AIData targetData = target.GetComponent<AIData>();
             targetData.Health -= dmg;
@@ -302,7 +430,6 @@ public class AdvancedAI : MonoBehaviour
     private void EndOfPath()
     {
         AIState = CurrentAIState.Idling;
-        LockTarget = false;
         path = null;
         currentWaypoint = 0;
     }
@@ -345,14 +472,14 @@ public class AdvancedAI : MonoBehaviour
     /// <summary>
     /// Finds the closest player/AI component which meets the requirements.
     /// </summary>
-    /// <returns>Returns the closest gameobject.</returns>
+    /// <returns>Returns the closest GameObject.</returns>
     private GameObject FindClosest()
     {
         GameObject Closest = null;
         int i = 0;
         foreach (Collider collider in Physics.OverlapSphere(transform.position, ViewDistance))
         {
-            if (collider.transform != transform && (collider.tag == "Player" || collider.tag == "AI"))
+            if (collider.transform != transform && (collider.tag == "Player" || collider.GetComponent<AdvancedAI>()))
             {
                 if (IsFlockMember(collider.gameObject))
                 {
@@ -376,28 +503,36 @@ public class AdvancedAI : MonoBehaviour
         return Closest;
     }
 
+    /// <summary>
+    /// Find the opposite position compared to the agent.
+    /// </summary>
+    /// <param name="gobj">The position to find the opposite of.</param>
+    /// <returns>The opposite position.</returns>
     private Vector3 FindOpposite(Vector3 gobj)
     {
         Vector3 offset = transform.position - gobj;
-        offset.x = Mathf.Clamp(Mathf.Abs(offset.x) * 100f, -1.0f, 1.0f);
-        offset.z = Mathf.Clamp(Mathf.Abs(offset.z) * 100f, -1.0f, 1.0f);
+        offset.x = Mathf.Clamp(Mathf.Abs(offset.x) / ViewDistance, -1.0f, 1.0f);
+        offset.z = Mathf.Clamp(Mathf.Abs(offset.z) / ViewDistance, -1.0f, 1.0f);
 
-        return transform.position - (offset * 50f);
+        return transform.position - (offset * ViewDistance);
     }
 
+    /// <summary>
+    /// Select which method to use on for finding the path, then send a pathRequest to the queue.
+    /// </summary>
     private void FindPath()
     {
         if (Terrain.activeTerrain != null)
         {
             bool t = false;
-            if (DistanceMaster() > ViewDistance)
+            if (!IsMaster && DistanceMaster() > ViewDistance) //If the agent can't see the master.
             {
                 LockTarget = false;
                 t = true;
             }
-            else if (!LockTarget)
+            if (!LockTarget)
             {
-                if (Flying)
+                if (Flying) //If flying is enabled
                 {
                     if (target = FindClosest())
                     {
@@ -411,22 +546,29 @@ public class AdvancedAI : MonoBehaviour
                 }
 
                 target = FindClosest();
-                if (target != null)
+                if (target == null)
                 {
                     target = Smell();
                 }
 
-                if (target != null && 100.0f - Data.Hunger <= target.GetComponent<AdvancedAI>().Size)
+                if (Type == AnimalType.aggresive)
                 {
-                    FindAPath(target.transform.position);
-                    return;
+                    if (target != null && 100.0f - Data.Hunger <= target.GetComponent<AdvancedAI>().Size) //If hungry
+                    {
+                        FindAPath(target.transform.position);
+                        return;
+                    }
+                }
+                else
+                {
+                    FindAPath(FindOpposite(target.transform.position));
                 }
 
                 if (AIState == CurrentAIState.Idling)
                 {
                     if (path == null || t)
                     {
-                        if (target == null)
+                        if (target == null) //If the agent doesn't have a target.
                         {
                             float min = -ViewDistance / 2;
                             float max = ViewDistance / 2;
@@ -434,11 +576,22 @@ public class AdvancedAI : MonoBehaviour
 
                             if (IsMaster || !FlockAnimal)
                             {
-                                FindAPath(transform.position + GridPos);
+                                FindAPath(transform.position + GridPos); //Move normally
                             }
                             else if (master != null)
                             {
-                                FindAPath(master.transform.position + GridPos);
+                                FindAPath(master.transform.position + GridPos); //Move to the master.
+                            }
+                        }
+                        else
+                        {
+                            if (Physics.Linecast(transform.position, target.transform.position)) //If it still is visible.
+                            {
+                                FindAPath(target.transform.position);
+                            }
+                            else
+                            {
+                                target = null;
                             }
                         }
                     }
@@ -475,6 +628,7 @@ public class AdvancedAI : MonoBehaviour
 
         if (Flying)
         {
+            transform.LookAt(path.Vector3Path[currentWaypoint]);
             Vector3 roto = transform.rotation.eulerAngles;
             roto.x = 45;
             transform.rotation = Quaternion.Euler(roto);
@@ -497,24 +651,33 @@ public class AdvancedAI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// If target is a danger to this animal.
+    /// </summary>
+    /// <param name="target"></param>
+    /// <returns>True or false depending on whether or not it is a danger.</returns>
     private bool isDanger(GameObject target)
     {
-        AdvancedAI targetAI = target.GetComponent<AdvancedAI>();
+        AdvancedAI targetAI = target.GetComponent<AdvancedAI>(); //Reference to the targets AdvancedAI component.
         if (targetAI == null)
         {
-            return true;
+            return true; //It is a danger.
         }
-        if (Size < targetAI.Size && targetAI.Type == AnimalType.aggresive) //Be scared if the animal is bigger and aggresive
+        if (Size < targetAI.Size && targetAI.Type == AnimalType.aggresive) //Be scared if the animal is bigger and aggressive
         {
-            return true;
+            return true; //It is a danger.
         }
         else if (Size < targetAI.Size + 20 && targetAI.Type == AnimalType.scared) //Be scared if much bigger than me.
         {
-            return true;
+            return true; //It is a danger.
         }
-        return false;
+        return false; //It is not a danger.
     }
 
+    /// <summary>
+    /// An iterator used for making the automated noise.
+    /// </summary>
+    /// <returns>Nothing</returns>
     private IEnumerator NoiseMaker()
     {
         if (automatedNoise)
@@ -602,6 +765,10 @@ public class AdvancedAI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when the path has been created.
+    /// </summary>
+    /// <param name="p">The returned path.</param>
     private void OnPathComplete(Path p)
     {
         if (p.Success)
@@ -615,12 +782,16 @@ public class AdvancedAI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Used to determine whether or not an animal is within smelling range.
+    /// </summary>
+    /// <returns></returns>
     private GameObject Smell()
     {
         Collider[] col = Physics.OverlapSphere(transform.position - (Wind.windVector3 * SmellDistance), SmellDistance);
         foreach (Collider collider in col)
         {
-            if (collider.tag == "AI" || collider.tag == "Player")
+            if (collider.GetComponent<AdvancedAI>() || collider.tag == "Player")
             {
                 if (IsFlockMember(collider.gameObject))
                 {
@@ -635,6 +806,9 @@ public class AdvancedAI : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Spawn new member in this flock.
+    /// </summary>
     private void SpawnFlockMember()
     {
         if (FlockAnimal)
@@ -672,8 +846,6 @@ public class AdvancedAI : MonoBehaviour
 
         Data = GetComponent<AIData>();
         Data.Home = transform.position;
-
-        tag = "AI";
 
         Mesh mesh;
         if (FindObjectOfType<SkinnedMeshRenderer>())

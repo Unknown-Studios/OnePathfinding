@@ -1,3 +1,18 @@
+# Version 1.3.0 (The polisher)
+- Fixed all remaining StackOverflowException
+- Added Documentation to the website: http://unknown-studios.com/OnePathDocs/
+- Made every variable in the plugin documented. If I missed one please feel free to contact me. :)
+- Fixed errors caused by not having the AI tag in the tagmanager. (This tag isn't needed anymore)
+- Relocated the Example scene to Plugins/OnePathfinding/Examples/
+- (AdvancedAI.cs) Fixed scared animals not fleeing.
+- (AdvancedAI.cs) Fixed AI not being percistent enough.
+- (AdvancedAI.cs) Agents in a flock will move towards the master if he isn't visible.
+- (AdvancedAI.cs) Fixed Flying AI agents not looking the direction that they are flying.
+- (GridManager.cs) Fixed bug where A* would continue to search all of the terrain if there wasn't a path between start and end positions.
+- (GridManager.cs) Center is now called Offset, as it was more of an offset than a center for the grid.
+- (AntiFly.cs) Fixed Agents able to fall off the terrain.
+- (AISpawner.cs) Fixed bug which caused some AIs to have the wrong name after being created.
+
 # Version 1.2.1
 - Added a way more descriptive tutorial on how to install and use.
 - Added Support, File Description, License and About sections to the TUTORIAL file.

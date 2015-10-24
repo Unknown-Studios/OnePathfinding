@@ -1,8 +1,29 @@
 ﻿using UnityEngine;
 
+/// <summary>
+/// Used to spawn AIs with ease.
+/// </summary>
 public class AISpawner : MonoBehaviour
 {
-    public static AISpawner instance;
+    /// <summary>
+    /// An instance to this object.
+    /// </summary>
+    private static AISpawner _instance;
+
+    /// <summary>
+    /// An instance to this object.
+    /// </summary>
+    public static AISpawner instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = FindObjectOfType<AISpawner>();
+            }
+            return _instance;
+        }
+    }
 
     /// <summary>
     /// Spawns a object at a position.
@@ -23,9 +44,14 @@ public class AISpawner : MonoBehaviour
         GameObject ob = (GameObject)Instantiate(obj, position, Quaternion.identity);
 
         ob.transform.parent = gridTransform;
-        ob.name = ob.name.Replace("(Clone)", "");
+        ob.name = obj.name;
     }
 
+    /// <summary>
+    /// Spawn the specified amount of obj AIs
+    /// </summary>
+    /// <param name="obj">The object to spawn</param>
+    /// <param name="Amount">The amount to spawn</param>
     public static void Spawn(GameObject obj, int Amount)
     {
         Terrain t = Terrain.activeTerrain;
@@ -49,17 +75,8 @@ public class AISpawner : MonoBehaviour
             GameObject ob = (GameObject)Instantiate(obj, new Vector3(Random.Range(minX, maxX), 0, Random.Range(minY, maxY)), Quaternion.identity);
             ob.transform.parent = gridTransform;
 
+            ob.name = obj.name;
             i++;
         }
-    }
-
-    private void OnDisable()
-    {
-        instance = null;
-    }
-
-    private void OnEnable()
-    {
-        instance = this;
     }
 }

@@ -5,19 +5,60 @@ using System.Collections.Generic;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
+/// <summary>
+/// Used to manage the grids. (To create them, delete them and set them up)
+/// </summary>
 [RequireComponent(typeof(Wind))]
 public class GridManager : MonoBehaviour
 {
+    /// <summary>
+    /// If the GridManager is scanning a grid.
+    /// </summary>
     public static bool isScanning;
-    public DebugLevel DebugLvl;
-    public List<GridGraph> grid;
-    public bool ShowFlockColor;
-    public bool ShowGizmos;
-    public bool ShowPaths;
-    private static GridManager _instance;
-    private PathRequest currentPathRequest;
-    private queue pathRequests = new queue();
 
+    /// <summary>
+    /// The level of debugging.
+    /// </summary>
+    public DebugLevel DebugLvl;
+
+    /// <summary>
+    /// The list of grids in this scene.
+    /// </summary>
+    public List<GridGraph> grid;
+
+    /// <summary>
+    /// Whether to show the color of each flock or not.
+    /// </summary>
+    public bool ShowFlockColor;
+
+    /// <summary>
+    /// Whether to show the gizmo's or not (Does not include Paths)
+    /// </summary>
+    public bool ShowGizmos;
+
+    /// <summary>
+    /// Whether to show paths or not.
+    /// </summary>
+    public bool ShowPaths;
+
+    /// <summary>
+    /// Instance to this object.
+    /// </summary>
+    private static GridManager _instance;
+
+    /// <summary>
+    /// The currently processed pathRequest.
+    /// </summary>
+    private PathRequest currentPathRequest;
+    
+    /// <summary>
+    /// The current queue of PathRequests.
+    /// </summary>
+    public queue pathRequests = new queue();
+
+    /// <summary>
+    /// The level at which debugging will happen.
+    /// </summary>
     public enum DebugLevel
     {
         None = 0,
@@ -25,6 +66,9 @@ public class GridManager : MonoBehaviour
         High = 2,
     }
 
+    /// <summary>
+    /// Gets the first grid in the grid-array.
+    /// </summary>
     public static GridGraph Grid
     {
         get
@@ -37,6 +81,9 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Gets the full list of grids in the grid-array.
+    /// </summary>
     public static List<GridGraph> Grids
     {
         get
@@ -49,6 +96,9 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Reference of this object.
+    /// </summary>
     public static GridManager instance
     {
         get
@@ -61,6 +111,9 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Whether or not to show the gizmo's in the editor.
+    /// </summary>
     public static bool ShowGizmo
     {
         get
@@ -73,6 +126,9 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Whether or not to show the paths in the editor.
+    /// </summary>
     public static bool ShowPath
     {
         get
@@ -82,6 +138,14 @@ public class GridManager : MonoBehaviour
                 return false;
             }
             return instance.ShowPaths;
+        }
+    }
+
+    public int queueLength
+    {
+        get
+        {
+            return pathRequests.Count;
         }
     }
 
@@ -123,7 +187,6 @@ public class GridManager : MonoBehaviour
         else
         {
             instance.pathRequests.Enqueue(newRequest);
-            instance.Process();
             return;
         }
     }
@@ -146,12 +209,21 @@ public class GridManager : MonoBehaviour
         instance.StartCoroutine(instance.ScanAGrid(grid));
     }
 
+    /// <summary>
+    /// Find the quickest path from point 1 to point 2
+    /// </summary>
+    /// <param name="startPos">The start-position of the path</param>
+    /// <param name="targetPos">The target-position for the path</param>
+    /// <param name="grid">The grid that it should perform the search on.</param>
+    /// <returns></returns>
     private IEnumerator FindThePath(Vector3 startPos, Vector3 targetPos, GridGraph grid)
     {
         if (grid.nodes == null || grid.nodes.Length == 0)
         {
             ScanGrid(grid);
         }
+
+        float max = Mathf.Infinity; //Maximum number of nodes, before canceling the path. (So if there isn't a way between 2 points it won't search forever)
 
         Path p = new Path();
         bool pathSuccess = false;
@@ -170,11 +242,13 @@ public class GridManager : MonoBehaviour
             Heap<Node> open = new Heap<Node>(grid.maxSize);
             HashSet<Node> closed = new HashSet<Node>();
             open.Add(startNode);
+            int cur = 0;
 
             while (open.Count > 0)
             {
                 Node currentNode = open.RemoveFirst();
                 closed.Add(currentNode);
+                cur++;
 
                 if (currentNode == targetNode)
                 {
@@ -200,9 +274,10 @@ public class GridManager : MonoBehaviour
                             open.Add(neighbour);
                     }
                 }
-                if (open.Count % 100 == 0)
+                if (cur > max)
                 {
-                    yield return null;
+                    pathSuccess = false;
+                    break;
                 }
             }
         }
@@ -213,6 +288,9 @@ public class GridManager : MonoBehaviour
         OnProccesingDone(p, pathSuccess);
     }
 
+    /// <summary>
+    /// Used to draw the grids gizmo's.
+    /// </summary>
     private void OnDrawGizmos()
     {
         if (grid == null)
@@ -264,10 +342,15 @@ public class GridManager : MonoBehaviour
                 }
             }
             Gizmos.color = Color.white;
-            Gizmos.DrawWireCube((Grid.center + (Grid.Vector2ToVector3(Grid.WorldSize) / 2)), Grid.Vector2ToVector3(Grid.WorldSize));
+            Gizmos.DrawWireCube((Grid.offset + (Grid.Vector2ToVector3(Grid.WorldSize) / 2)), Grid.Vector2ToVector3(Grid.WorldSize));
         }
     }
 
+    /// <summary>
+    /// Called when the processing of the current path is done.
+    /// </summary>
+    /// <param name="p">The path that has been worked on.</param>
+    /// <param name="Success">Whether it was a success or not.</param>
     private void OnProccesingDone(Path p, bool Success)
     {
         p.Success = Success;
@@ -279,9 +362,19 @@ public class GridManager : MonoBehaviour
 
         currentPathRequest.callback(p);
         currentPathRequest = null;
+    }
+
+    /// <summary>
+    /// Called once every frame.
+    /// </summary>
+    void Update()
+    {
         Process();
     }
 
+    /// <summary>
+    /// Process the next pathRequest in-line.
+    /// </summary>
     private void Process()
     {
         if (currentPathRequest == null && pathRequests.Count > 0)

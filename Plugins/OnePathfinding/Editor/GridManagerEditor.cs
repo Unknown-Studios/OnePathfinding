@@ -3,16 +3,49 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
+/// <summary>
+/// A custom editor for the GridManager
+/// </summary>
 [CustomEditor(typeof(GridManager))]
 public class GMEditor : Editor
 {
+    /// <summary>
+    /// Last time the layer mask was updated.
+    /// </summary>
     public static long lastUpdateTick;
+
+    /// <summary>
+    /// The list of names for the layers.
+    /// </summary>
     public static string[] layerNames;
+
+    /// <summary>
+    /// The number for each layer.
+    /// </summary>
     public static List<int> layerNumbers;
+
+    /// <summary>
+    /// The name for each layer.
+    /// </summary>
     public static List<string> layers;
+
+    /// <summary>
+    /// Bool array toggling whether to show grid settings or not.
+    /// </summary>
     public bool[] current;
+
+    /// <summary>
+    /// An instance to this object.
+    /// </summary>
     private GridManager GM;
 
+    /// <summary>
+    /// Used as a custom editor field for layer masks.
+    /// </summary>
+    /// <param name="label"></param>
+    /// <param name="selected"></param>
+    /// <param name="showSpecial"></param>
+    /// <returns></returns>
     public LayerMask LayerMaskField(string label, LayerMask selected, bool showSpecial)
     {
         //Unity 3.5 and up
@@ -62,9 +95,13 @@ public class GMEditor : Editor
         return selected;
     }
 
+    /// <summary>
+    /// Used to draw the inspectorGUI.
+    /// </summary>
     public override void OnInspectorGUI()
     {
         GM = (GridManager)target;
+        EditorUtility.SetDirty(target);
         if (GM == null)
         {
             return;
@@ -78,16 +115,23 @@ public class GMEditor : Editor
         {
             current = new bool[GM.grid.Count];
         }
-
+        EditorGUILayout.LabelField("Information:", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField(new GUIContent("Queue length: " + GM.queueLength, "This shows the current length of the queue."));
         EditorGUILayout.LabelField(new GUIContent("Currently active AIs: " + FindObjectsOfType<AdvancedAI>().Length.ToString(), "This label shows how many AI components is found in the scene"));
         EditorGUILayout.LabelField("Scanning: " + GridManager.isScanning);
+        GUILayout.Space(10f);
+        EditorGUILayout.LabelField("Settings:", EditorStyles.boldLabel);
         GM.DebugLvl = (GridManager.DebugLevel)EditorGUILayout.EnumPopup("Debug Level: ", GM.DebugLvl);
-        GM.ShowGizmos = EditorGUILayout.Toggle("Show Gizmos: ", GM.ShowGizmos);
-        GM.ShowFlockColor = EditorGUILayout.Toggle(new GUIContent("Show Flock Color", "Each flock has a color for their gizmos, making it easier to see who's who."), GM.ShowFlockColor);
+        GM.ShowGizmos = EditorGUILayout.Toggle("Show Gizmo's: ", GM.ShowGizmos);
+        if (GM.ShowGizmos)
+        {
+            GM.ShowFlockColor = EditorGUILayout.Toggle(new GUIContent("Show Flock Color", "Each flock has a color for their gizmo's, making it easier to see who's who."), GM.ShowFlockColor);
+        }
         GM.ShowPaths = EditorGUILayout.Toggle(new GUIContent("Show Paths", "Show each AIs current path"), GM.ShowPaths);
 
         GUILayout.Space(10f);
         EditorGUILayout.LabelField("Grids:", EditorStyles.boldLabel);
+        
 
         for (int i = 0; i < GM.grid.Count; i++)
         {
@@ -95,7 +139,7 @@ public class GMEditor : Editor
             if (current[i])
             {
                 GM.grid[i].name = EditorGUILayout.TextField("Name: ", GM.grid[i].name);
-                GM.grid[i].center = EditorGUILayout.Vector3Field("Center", GM.grid[i].center);
+                GM.grid[i].offset = EditorGUILayout.Vector3Field("Offset", GM.grid[i].offset);
                 GM.grid[i].WorldSize = EditorGUILayout.Vector2Field("World Size", GM.grid[i].WorldSize);
                 GM.grid[i].NodeRadius = EditorGUILayout.FloatField("Node Radius", GM.grid[i].NodeRadius);
                 GM.grid[i].angleLimit = EditorGUILayout.IntSlider("Max Angle", GM.grid[i].angleLimit, 0, 90);
@@ -120,10 +164,12 @@ public class GMEditor : Editor
             GridGraph g = GM.grid[GM.grid.Count - 1];
             if (g == null)
             {
-                Debug.Log(GM.grid.Count - 1);
+                Debug.LogError("An error happened, please contact the developer, CODE: G" + (GM.grid.Count - 1));
                 return;
             }
             g.name = "Grid #" + GM.grid.Count;
+            Debug.Log(LayerMask.NameToLayer("Terrain"));
+            g.WalkableMask.value = LayerMask.NameToLayer("Terrain");
         }
         GUILayout.Space(20);
         if (GUILayout.Button("Scan Grids"))
@@ -135,8 +181,12 @@ public class GMEditor : Editor
         }
     }
 
-    private void OnInspectorUpdate()
+    /// <summary>
+    /// Update the inspector.
+    /// </summary>
+    public void OnInspectorUpdate()
     {
+        // This will only get called 10 times per second.
         Repaint();
     }
 }

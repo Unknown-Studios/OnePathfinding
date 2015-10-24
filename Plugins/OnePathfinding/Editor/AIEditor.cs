@@ -1,18 +1,36 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
+/// <summary>
+/// Custom editor for the AdvancedAI component.
+/// </summary>
 [CustomEditor(typeof(AdvancedAI))]
 public class AdvancedAIEditor : Editor
 {
+    //An instance of the AdvancedAI component.
     private AdvancedAI _target;
 
+    //Show this AIs current audio settings
     private bool ShowAudio;
+
+    //Show this AIs current behavior settings.
     private bool ShowBehave;
+
+    //Show this AIs current Data.
     private bool ShowData = true;
+
+    //Show this AIs current flock settings.
     private bool ShowFlock;
+
+    //Show this AIs current flying settings.
     private bool ShowFly;
+
+    //Show the current specifications for this AI.
     private bool ShowSpecs;
 
+    /// <summary>
+    /// Used to draw the inspector.
+    /// </summary>
     public override void OnInspectorGUI()
     {
         _target = (AdvancedAI)target;
@@ -90,6 +108,9 @@ public class AdvancedAIEditor : Editor
         }
     }
 
+    /// <summary>
+    /// Update the inspector.
+    /// </summary>
     private void OnInspectorUpdate()
     {
         Repaint();

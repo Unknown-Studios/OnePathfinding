@@ -1,26 +1,34 @@
 ﻿using OnePathfinding; //Add the custom classes and other stuff, this should be included in every script that is using Pathfinding
 using UnityEngine;
 
+/// <summary>
+/// SimpleAI is mainly for learning the basics of this component.
+/// </summary>
 public class SimpleAI : MonoBehaviour
 {
     //This is a simple AI Controller, use AI if you want to learn the advanced features.
 
-    //Distance to waypoint before switching to the next one,
-    //Don't make this 0.0 as there might be some offsets.
+    /// <summary>
+    /// Distance to waypoint before switching to the next one, Don't make this 0.0 as there might be
+    /// some offsets.
+    /// </summary>
     public float nextWaypoint = 2f;
 
-    //The speed at which the AI will move.
+    ///The speed at which the AI will move.
     public float speed;
 
-    //The currently targeted gameobject.
+    ///The currently targeted GameObject.
     public GameObject target;
 
-    //The current waypoint
+    ///The current waypoint
     private int currentWay = 0;
 
-    //The currently active path
+    ///The currently active path
     private Path path;
 
+    /// <summary>
+    /// FixedUpdate
+    /// </summary>
     private void FixedUpdate()
     {
         if (path != null)
@@ -39,6 +47,9 @@ public class SimpleAI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Called when the end of the path has been reached.
+    /// </summary>
     private void OnEndReached()
     {
         Debug.Log("The end has been reached");
@@ -47,15 +58,22 @@ public class SimpleAI : MonoBehaviour
         path = null;
     }
 
+    /// <summary>
+    /// Called when the path has been generated.
+    /// </summary>
+    /// <param name="p">Returns the generated path.</param>
     private void OnPathComplete(Path p)
-    { //When the path proccesing is done
-        if (p.Success) //If the path was a succes
+    { //When the path processing is done
+        if (p.Success) //If the path was a success
         {
             path = p; //Set the path as the current path
             currentWay = 0; //Reset the waypoint counter
         }
     }
 
+    /// <summary>
+    /// Called on initialization.
+    /// </summary>
     private void Start()
     {
         //GridManager.RequestPath(starting point, ending point, OnPathFound, randomString);

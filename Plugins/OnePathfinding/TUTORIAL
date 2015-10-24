@@ -6,92 +6,9 @@ OnePathfinding is using systems like Queueing for better
 performance on the go. Its examples contains advanced detection
 systems, these being Audio, Smelling and Viewing detection.
 
-# ------------ Setup ------------
+# ------------ Documents ------------
 
-1.	Create a terrain for the objects to move on.
- 
-2.	Create an empty gameobject, this gameobject will work as your manager. 
-	Make sure that you are never going to end up with two of these components.
-	
-3.	Attach the GridManager script from 
-	Plugins/OnePathfinding/Core/GridManager.cs
-	or
-	use the already setup prefab called GameController under 
-	Plugins/OnePathfinding/Prefab/GameController.prefab
-
-3.5. (Optional) Attach the AISpawner component to the GameController, 
-	this can be used for spawning AIs with ease. You can then use the AISpawner.Spawn() 
-	function to spawn animals, for an example on spawning these try taking a look at the 
-	test.cs in Plugins/OnePathfinding/Scene/
-	
-
-4.	Create a grid by clicking on Add Grid on the gridmanager component, 
-	then fill out the options for it.
-	
-5.	Attach the AdvancedAI or SimpleAI scripts to the 
-	object you want to become an AI gameobject.
-
-6.	If you added the AISpawner and Test script the 
-	AIs should spawn and begin to move around, when the 
-	game is started.
-
-If the steps was followed correctly, the AI should be 
-moving by now. If this isn't the case, please contact 
-us. Support information can be found further down in 
-this file.
-
-# ------------ File Description ------------
-This is a description of each of the main files, descriping what the file does and how to use it:
-
-GridManager.cs:
-	This file is used for managing a list of grids
-	and changing the options for every grid. It's 
-	important that there isn't two of this component
-	in one scene.
-	
-Pathfinding.cs:
-	This file contains the namespace that is used for
-	finding the path. This file should not be edited
-	unless you know what you are doing. This namespace
-	should be used in every script that is going to use
-	the pathfinding algorithms.
-	
-SimpleAI.cs:
-	This file is used mainly for learning purposes, you
-	attach this file to a gameobject and drag another 
-	active gameobject to the target variable. When the game
-	is started it will move towards the gameobject "target"
-	
-AdvancedAI.cs:
-	This file is the main example, this file contains the out
-	of the box detection system, this script can be used for 
-	further learning the API.
-	
-AntiFly.cs:
-	This file is used to prevent the AI from going off the
-	terrain. This file doesn't have any variables and just
-	needs to be attached to the gameobject to work.
-	
-Wind.cs:
-	This file will be added automatically added with 
-	gridmanager, it has 1 variable:
-		Repeat Rate: The repeat rate is how often the 
-		wind direction is updated in seconds. So if it 
-		is 30 it will update the direction of the wind
-		every 30 seconds.
-		
-AudioScript.cs:
-	The audioscript is used to attach to the external 
-	audio sources that is going to affect the AIs.
-	
-AIData.cs:
-	This script is used for holding all of the AIs data.
-	This is Health, hunger and home location(Spawn Location)
-	
-Documentation for these files will be added to the website shortly.
-
-# ------------ Support ------------
-
+Documentation: http://unknown-studios.com/OnePathDocs/annotated.html
 Webplayer: http://unknown-studios.com/OnePathfinding.html
 Website: http://unknown-studios.com#onepath
 Forum: http://forum.unknown-studios.com/topic.php?id=3
