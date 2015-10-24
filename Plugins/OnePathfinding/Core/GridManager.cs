@@ -223,7 +223,7 @@ public class GridManager : MonoBehaviour
             ScanGrid(grid);
         }
 
-        float max = Mathf.Infinity; //Maximum number of nodes, before canceling the path. (So if there isn't a way between 2 points it won't search forever)
+        float max = 300; //Maximum number of nodes, before canceling the path. (So if there isn't a way between 2 points it won't search forever)
 
         Path p = new Path();
         bool pathSuccess = false;
