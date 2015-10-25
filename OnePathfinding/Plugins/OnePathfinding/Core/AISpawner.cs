@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 /// <summary>
 /// Used to spawn AIs with ease.
@@ -9,6 +10,11 @@ public class AISpawner : MonoBehaviour
     /// An instance to this object.
     /// </summary>
     private static AISpawner _instance;
+
+    /// <summary>
+    /// Maximum number of AIs.
+    /// </summary>
+    public int MaxAIs = 100;
 
     /// <summary>
     /// An instance to this object.
@@ -54,11 +60,16 @@ public class AISpawner : MonoBehaviour
     /// <param name="Amount">The amount to spawn</param>
     public static void Spawn(GameObject obj, int Amount)
     {
+        instance.StartCoroutine(SpawnObjects(obj, Amount));
+    }
+
+    private static IEnumerator SpawnObjects(GameObject obj, int Amount)
+    {
         Terrain t = Terrain.activeTerrain;
         if (t == null || t.terrainData == null)
         {
             Debug.Log("Cannot spawn objects, when no terrain is existent.");
-            return;
+            yield break;
         }
 
         float minX = t.transform.position.x;
@@ -70,13 +81,14 @@ public class AISpawner : MonoBehaviour
         Transform gridTransform = FindObjectOfType<GridManager>().transform;
 
         int i = 0;
-        while (i < Amount)
+        while (i < Amount && instance.gameObject.transform.childCount < instance.MaxAIs)
         {
             GameObject ob = (GameObject)Instantiate(obj, new Vector3(Random.Range(minX, maxX), 0, Random.Range(minY, maxY)), Quaternion.identity);
             ob.transform.parent = gridTransform;
-
             ob.name = obj.name;
+
             i++;
+            yield return null;
         }
     }
 }

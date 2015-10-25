@@ -7,25 +7,25 @@ using UnityEngine;
 [CustomEditor(typeof(AdvancedAI))]
 public class AdvancedAIEditor : Editor
 {
-    //An instance of the AdvancedAI component.
+    ///An instance of the AdvancedAI component.
     private AdvancedAI _target;
 
-    //Show this AIs current audio settings
+    ///Show this AIs current audio settings
     private bool ShowAudio;
 
-    //Show this AIs current behavior settings.
+    ///Show this AIs current behavior settings.
     private bool ShowBehave;
 
-    //Show this AIs current Data.
+    ///Show this AIs current Data.
     private bool ShowData = true;
 
-    //Show this AIs current flock settings.
+    ///Show this AIs current flock settings.
     private bool ShowFlock;
 
-    //Show this AIs current flying settings.
+    ///Show this AIs current flying settings.
     private bool ShowFly;
 
-    //Show the current specifications for this AI.
+    ///Show the current specifications for this AI.
     private bool ShowSpecs;
 
     /// <summary>
@@ -41,10 +41,21 @@ public class AdvancedAIEditor : Editor
         style.fontStyle = FontStyle.Bold;
 
         ShowData = EditorGUILayout.Foldout(ShowData, "Animal Data: ", style);
+        string ps;
+        if (_target.pt == AdvancedAI.PathType.none)
+        {
+            ps = "No path";
+        } else if (_target.pt == AdvancedAI.PathType.HasPath)
+        {
+            ps = "Has path";
+        } else
+        {
+            ps = "Requested path";
+        }
         if (ShowData)
         {
             EditorGUILayout.LabelField("Animal Size: " + _target.Size);
-            EditorGUILayout.LabelField("Has Path: " + (_target.hasPath));
+            EditorGUILayout.LabelField("Path State: ", ps);
             EditorGUILayout.LabelField("Animal State: " + _target.AIState);
             if (_target.automatedNoise)
             {

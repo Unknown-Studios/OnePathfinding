@@ -143,7 +143,7 @@ public class GMEditor : Editor
                 GM.grid[i].WorldSize = EditorGUILayout.Vector2Field("World Size", GM.grid[i].WorldSize);
                 GM.grid[i].NodeRadius = EditorGUILayout.FloatField("Node Radius", GM.grid[i].NodeRadius);
                 GM.grid[i].angleLimit = EditorGUILayout.IntSlider("Max Angle", GM.grid[i].angleLimit, 0, 90);
-                GM.grid[i].WalkableMask = LayerMaskField("Walkable Layer(s):", GM.grid[i].WalkableMask, true);
+                GM.grid[i].UnWalkableMask = LayerMaskField("Walkable Layer(s):", GM.grid[i].UnWalkableMask, true);
                 GUILayout.Space(10);
                 if (GUILayout.Button("Scan Grid"))
                 {
@@ -168,8 +168,6 @@ public class GMEditor : Editor
                 return;
             }
             g.name = "Grid #" + GM.grid.Count;
-            Debug.Log(LayerMask.NameToLayer("Terrain"));
-            g.WalkableMask.value = LayerMask.NameToLayer("Terrain");
         }
         GUILayout.Space(20);
         if (GUILayout.Button("Scan Grids"))

@@ -9,19 +9,20 @@ public class Wind : MonoBehaviour
     /// <summary>
     /// The speed at which the wind moves.
     /// </summary>
-    public static float speed;
+    public static float speed = 1.0f;
 
     /// <summary>
     /// The rate at which the wind direction updates. (In seconds)
     /// </summary>
-    public int RepeatRate;
+    public int RepeatRate = 300;
 
     /// <summary>
     /// A instance to this component.
     /// </summary>
     private static Wind _instance;
 
-    /// <summary    /// The current wind direction
+    /// <summary>
+    /// The current wind direction.
     /// </summary>
     private Vector2 _wind;
 
@@ -73,6 +74,7 @@ public class Wind : MonoBehaviour
     {
         if (FindObjectsOfType<Wind>().Length > 1)
         {
+            Debug.LogError("There can never be 2 Wind components in the same scene.");
             Destroy(this);
         }
         _instance = FindObjectOfType<Wind>();

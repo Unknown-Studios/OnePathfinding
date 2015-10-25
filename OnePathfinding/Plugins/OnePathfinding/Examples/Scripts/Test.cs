@@ -12,17 +12,12 @@ public class Test : MonoBehaviour
     /// </summary>
     public List<GameObject> gameobjects;
 
-    /// <summary>
-    /// Number of AIs to spawn.
-    /// </summary>
-    public int NumberOfAIs = 100;
-
     //Called on the start of this component.
     private void Start()
     {
         foreach (GameObject g in gameobjects)
         {
-            AISpawner.Spawn(g, NumberOfAIs / gameobjects.Count);
+            AISpawner.Spawn(g, GetComponent<AISpawner>().MaxAIs / gameobjects.Count);
         }
     }
 }

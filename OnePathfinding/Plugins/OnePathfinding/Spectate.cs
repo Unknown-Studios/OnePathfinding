@@ -50,7 +50,8 @@ public class Spectate : MonoBehaviour
     /// </summary>
     private void Update()
     {
-        if (FindObjectsOfType<AdvancedAI>().Length != 0)
+        AIs = FindObjectsOfType<AdvancedAI>();
+        if (AIs.Length != 0)
         {
             if (Input.GetKeyDown(KeyCode.RightArrow))
             {

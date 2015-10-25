@@ -4,7 +4,7 @@ OnePathfinding is a pathfinding system using the A* algorithm
 to find the best possible way from point A to point B. 
 OnePathfinding is using systems like Queueing for better 
 performance on the go. Its examples contains advanced detection
-systems, these being Audio, Smelling and Viewing detection.
+systems like Audio, Smelling and Viewing detection.
 
 # ------------ Documents ------------
 
@@ -14,7 +14,6 @@ Website: http://unknown-studios.com#onepath
 Forum: http://forum.unknown-studios.com/topic.php?id=3
 Unity Forum: http://forum.unity3d.com/threads/onepathfinding.357444/
 Mail: oneunknownstudio@gmail.com
-
 
 # ------------ License ------------
 

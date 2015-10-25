@@ -1,3 +1,15 @@
+# Version 1.3.1 (The cleanup)
+- Added documentation for missed variables.
+- (AISpawner.cs) Added variable to set maximum number of active AIs in the scene.
+- (AdvancedAI.cs) Fixed Flying AI not fleeing combat if set to scared.
+- (AdvancedAI.cs) Fixed Flocking not working.
+- (GridManager.cs) Fixed AI was able to have multiple pathrequests queued at a time.
+- (AdvancedAIEditor.cs) Added new label under information named: "Path State" (Replaced "Has Path")
+- (GridManager.cs) Reversed the WalkableMask to be UnwalkableMask.
+- (GridManagerEditor.cs) Removed some unused debugging code.
+- (Wind.cs) Fixed default value for RepeatRate being 0. (Default: 300)
+- (GridManager.cs) Fixed some errors when drawing the grid when there wasn't any nodes.
+
 # Version 1.3.0 (The polisher)
 - Fixed all remaining StackOverflowException
 - Added Documentation to the website: http://unknown-studios.com/OnePathDocs/

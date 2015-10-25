@@ -67,7 +67,7 @@ namespace OnePathfinding
         /// <summary>
         /// This is very important, it is the layers at which the AI can walk on.
         /// </summary>
-        public LayerMask WalkableMask;
+        public LayerMask UnWalkableMask;
 
         private Vector2 _Size;
 
@@ -332,7 +332,10 @@ namespace OnePathfinding
                 endPos.y = hit.point.y;
                 if (Vector3.Angle(Vector3.up, hit.normal) < angleLimit)
                 {
-                    Walk = !(Physics.CheckSphere(endPos, (NodeRadius * 2), WalkableMask));
+                    if (!Physics.CheckSphere(endPos, (NodeRadius * 2), UnWalkableMask))
+                    {
+                        Walk = true;
+                    }
                 }
             }
 

@@ -141,6 +141,9 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// The current length of the queue.
+    /// </summary>
     public int queueLength
     {
         get
@@ -176,7 +179,7 @@ public class GridManager : MonoBehaviour
         {
             grid = Grid;
         }
-        string Name = (pathStart * pathEnd.x).GetHashCode().ToString();
+        string Name = callback.GetHashCode().ToString();
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, callback, Name, grid);
         PathRequest contains = instance.pathRequests.Contains(Name);
         if (contains != null)
@@ -276,7 +279,6 @@ public class GridManager : MonoBehaviour
                 }
                 if (cur > max)
                 {
-                    pathSuccess = false;
                     break;
                 }
             }
@@ -304,39 +306,46 @@ public class GridManager : MonoBehaviour
                 if (Grid.nodes == null)
                 {
                     ScanGrid(Grid);
+                    return;
                 }
                 if (DebugLvl == DebugLevel.High)
                 {
-                    foreach (Node n in Grid.nodes)
+                    if (Grid.nodes != null)
                     {
-                        if (n == null)
+                        foreach (Node n in Grid.nodes)
                         {
-                            continue;
-                        }
-                        if (!n.Walkable)
-                        {
-                            Gizmos.color = Color.red;
-                            Gizmos.DrawCube(n.WorldPosition, Vector3.one * (Grid.NodeRadius * 2f));
-                        }
-                        else
-                        {
-                            Gizmos.color = Color.blue;
-                            Gizmos.DrawCube(n.WorldPosition, Vector3.one * (Grid.NodeRadius * 2f));
+                            if (n == null)
+                            {
+                                continue;
+                            }
+                            if (!n.Walkable)
+                            {
+                                Gizmos.color = Color.red;
+                                Gizmos.DrawCube(n.WorldPosition, Vector3.one * (Grid.NodeRadius * 2f));
+                            }
+                            else
+                            {
+                                Gizmos.color = Color.blue;
+                                Gizmos.DrawCube(n.WorldPosition, Vector3.one * (Grid.NodeRadius * 2f));
+                            }
                         }
                     }
                 }
                 if (DebugLvl == DebugLevel.Low)
                 {
-                    foreach (Node n in Grid.nodes)
+                    if (Grid.nodes != null)
                     {
-                        if (n == null)
+                        foreach (Node n in Grid.nodes)
                         {
-                            continue;
-                        }
-                        if (!n.Walkable)
-                        {
-                            Gizmos.color = Color.red;
-                            Gizmos.DrawCube(n.WorldPosition, Vector3.one * (Grid.NodeRadius * 2f));
+                            if (n == null)
+                            {
+                                continue;
+                            }
+                            if (!n.Walkable)
+                            {
+                                Gizmos.color = Color.red;
+                                Gizmos.DrawCube(n.WorldPosition, Vector3.one * (Grid.NodeRadius * 2f));
+                            }
                         }
                     }
                 }
