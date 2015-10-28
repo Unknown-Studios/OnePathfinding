@@ -45,10 +45,12 @@ public class AdvancedAIEditor : Editor
         if (_target.pt == AdvancedAI.PathType.none)
         {
             ps = "No path";
-        } else if (_target.pt == AdvancedAI.PathType.HasPath)
+        }
+        else if (_target.pt == AdvancedAI.PathType.HasPath)
         {
             ps = "Has path";
-        } else
+        }
+        else
         {
             ps = "Requested path";
         }
@@ -57,9 +59,9 @@ public class AdvancedAIEditor : Editor
             EditorGUILayout.LabelField("Animal Size: " + _target.Size);
             EditorGUILayout.LabelField("Path State: ", ps);
             EditorGUILayout.LabelField("Animal State: " + _target.AIState);
-            if (_target.automatedNoise)
+            if (_target.GetComponent<Listener>() && _target.GetComponent<Listener>().automatedNoise)
             {
-                EditorGUILayout.LabelField("Time till automated noise: " + Mathf.Round(-1f * _target.TillNoise) + "s");
+                EditorGUILayout.LabelField("Time till automated noise: " + Mathf.Round(-1f * _target.GetComponent<Listener>().TillNoise) + "s");
             }
             if (_target.FlockAnimal)
             {
@@ -75,15 +77,14 @@ public class AdvancedAIEditor : Editor
             _target.Type = (AdvancedAI.AnimalType)EditorGUILayout.EnumPopup("Animal Type: ", _target.Type);
             _target.speed = EditorGUILayout.FloatField("Speed: ", _target.speed);
             _target.RandomAddSpeed = EditorGUILayout.Toggle(new GUIContent("Randomize Speed: ", "Adds a random number between -2 and 2 to the speed."), _target.RandomAddSpeed);
-            _target.Damage = EditorGUILayout.FloatField("Damage: ", _target.Damage);
-            if (!_target.Flying)
+            if (_target.Type == AdvancedAI.AnimalType.aggresive)
             {
-                _target.SmellDistance = EditorGUILayout.FloatField("Smell Distance: ", _target.SmellDistance);
+                _target.Damage = EditorGUILayout.FloatField("Damage: ", _target.Damage);
             }
             _target.ViewDistance = EditorGUILayout.FloatField("View Distance: ", _target.ViewDistance);
-            if (_target.AlertSound != null)
+            if (!_target.Flying && _target.GetComponent<Smelling>())
             {
-                _target.NoiseDistance = EditorGUILayout.FloatField(new GUIContent("Noise Distance", "The maximum distance at which the alert sound can be heard."), _target.NoiseDistance);
+                _target.GetComponent<Smelling>().SmellDistance = EditorGUILayout.FloatField("Smell Distance: ", _target.GetComponent<Smelling>().SmellDistance);
             }
         }
 
@@ -108,13 +109,17 @@ public class AdvancedAIEditor : Editor
                 _target.maxFlockSize = EditorGUILayout.IntSlider(new GUIContent("Max Flock Size"), _target.maxFlockSize, _target.minFlockSize, 100);
             }
         }
-        ShowAudio = EditorGUILayout.Foldout(ShowAudio, new GUIContent("Audio:", "Settings for the Audio"), style);
-        if (ShowAudio)
+        if (_target.GetComponent<Listener>())
         {
-            _target.AlertSound = (AudioClip)EditorGUILayout.ObjectField("Alert Sound: ", _target.AlertSound, typeof(AudioClip), false);
-            if (_target.AlertSound != null)
+            ShowAudio = EditorGUILayout.Foldout(ShowAudio, new GUIContent("Audio:", "Settings for the Audio"), style);
+            if (ShowAudio)
             {
-                _target.automatedNoise = EditorGUILayout.Toggle(new GUIContent("Auto Noise", "Play alert sound from time to time."), _target.automatedNoise);
+                _target.GetComponent<Listener>().AlertSound = (AudioClip)EditorGUILayout.ObjectField("Alert Sound: ", _target.GetComponent<Listener>().AlertSound, typeof(AudioClip), false);
+                if (_target.GetComponent<Listener>().AlertSound != null)
+                {
+                    _target.GetComponent<Listener>().NoiseDistance = EditorGUILayout.FloatField(new GUIContent("Noise Distance:", "The maximum distance at which noises from this animal can be heard."), _target.GetComponent<Listener>().NoiseDistance);
+                    _target.GetComponent<Listener>().automatedNoise = EditorGUILayout.Toggle(new GUIContent("Auto Noise", "Play alert sound from time to time."), _target.GetComponent<Listener>().automatedNoise);
+                }
             }
         }
     }

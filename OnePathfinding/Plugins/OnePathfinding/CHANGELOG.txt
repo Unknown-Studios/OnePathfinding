@@ -1,3 +1,13 @@
+# Version 1.4.0 (Rounder)
+- 
+
+# Version 1.3.2 (Separation)
+- Fixed missing directional light in example scene.
+- Moved Listen and Smelling features to new components, which can easily be attached. The new components are called Listening & Smelling.
+- Improved setup tutorial.
+- Added example to documentation.
+- Added file types to the CHANGELOG and README files.
+
 # Version 1.3.1 (The cleanup)
 - Added documentation for missed variables.
 - (AISpawner.cs) Added variable to set maximum number of active AIs in the scene.
@@ -6,18 +16,18 @@
 - (GridManager.cs) Fixed AI was able to have multiple pathrequests queued at a time.
 - (AdvancedAIEditor.cs) Added new label under information named: "Path State" (Replaced "Has Path")
 - (GridManager.cs) Reversed the WalkableMask to be UnwalkableMask.
+- (GridManager.cs) Fixed some errors when drawing the grid when there wasn't any nodes.
 - (GridManagerEditor.cs) Removed some unused debugging code.
 - (Wind.cs) Fixed default value for RepeatRate being 0. (Default: 300)
-- (GridManager.cs) Fixed some errors when drawing the grid when there wasn't any nodes.
 
 # Version 1.3.0 (The polisher)
 - Fixed all remaining StackOverflowException
 - Added Documentation to the website: http://unknown-studios.com/OnePathDocs/
 - Made every variable in the plugin documented. If I missed one please feel free to contact me. :)
-- Fixed errors caused by not having the AI tag in the tagmanager. (This tag isn't needed anymore)
+- Fixed errors caused by not having the AI tag in the tag-manager. (This tag isn't needed anymore)
 - Relocated the Example scene to Plugins/OnePathfinding/Examples/
 - (AdvancedAI.cs) Fixed scared animals not fleeing.
-- (AdvancedAI.cs) Fixed AI not being percistent enough.
+- (AdvancedAI.cs) Fixed AI not being persistent enough.
 - (AdvancedAI.cs) Agents in a flock will move towards the master if he isn't visible.
 - (AdvancedAI.cs) Fixed Flying AI agents not looking the direction that they are flying.
 - (GridManager.cs) Fixed bug where A* would continue to search all of the terrain if there wasn't a path between start and end positions.
@@ -29,8 +39,8 @@
 - Added a way more descriptive tutorial on how to install and use.
 - Added Support, File Description, License and About sections to the TUTORIAL file.
 - (AdvancedAI.cs) Moved movement to FixedUpdate instead of Update.
-- (AdvancedAI.cs) Improved perfomance, to be 0.25-0.5ms faster.
-- (AdvancedAI.cs) Fixed StackOverflowException occuring after running the example scene for some time.
+- (AdvancedAI.cs) Improved performance, to be 0.25-0.5ms faster.
+- (AdvancedAI.cs) Fixed StackOverflowException occurring after running the example scene for some time.
 
 # Version 1.2.0
 - (AdvancedAI.cs) Added flying
@@ -50,18 +60,18 @@
 # Version 1.1.2
 - Fixed two compiler errors when building.
 - Added Spectator mode to example scene.
-- Fixed Attacks never occuring when using advanced AI script
+- Fixed Attacks never occurring when using advanced AI script
 
 # Version 1.1.1
-- Fixed wrong hierachy format for plugins.
+- Fixed wrong hierarchy format for plugins.
 
 # Version 1.1.0
 - Fixed Scared animals not fleeing combat, but engaging it.
 - Added Audio sensor support.
 - Added AudioScript.cs which can be attached to external audio sources. (Like exploding objects, cars etc.)
-- Added support for spawning multiple gameobjects from Test.cs script.
+- Added support for spawning multiple game-objects from Test.cs script.
 - Added option to change how many AIs is spawned by Test.cs
-- Added option on AIData to enable/disable respawning.
+- Added option on AIData to enable/disable re-spawning.
 - Added a new example of a scared AI
 - Improved AntiFly script.
 

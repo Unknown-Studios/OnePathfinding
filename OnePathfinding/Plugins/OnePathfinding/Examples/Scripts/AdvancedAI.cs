@@ -8,7 +8,6 @@ using Random = UnityEngine.Random;
 /// The main example in the OnePathfinding solution.
 /// </summary>
 [RequireComponent(typeof(AIData))]
-[RequireComponent(typeof(AudioSource))]
 public class AdvancedAI : MonoBehaviour
 {
     /// <summary>
@@ -21,16 +20,6 @@ public class AdvancedAI : MonoBehaviour
     /// The AIs current state of behavior.
     /// </summary>
     public CurrentAIState AIState;
-
-    /// <summary>
-    /// The sound that the AI will make when it is going to alert an animal.
-    /// </summary>
-    public AudioClip AlertSound;
-
-    /// <summary>
-    /// Whether or not to play an automated noise.
-    /// </summary>
-    public bool automatedNoise;
 
     /// <summary>
     /// The damage this AI will do if it gets close enough to the target.
@@ -120,11 +109,6 @@ public class AdvancedAI : MonoBehaviour
     public float speed = 6.0F;
 
     /// <summary>
-    /// The time remaining until this animal will make a noise again.
-    /// </summary>
-    public float TillNoise;
-
-    /// <summary>
     /// This animals type, whether it is aggressive, passive(Coming soon) or scared
     /// </summary>
     public AnimalType Type;
@@ -140,22 +124,12 @@ public class AdvancedAI : MonoBehaviour
     private float AttackRange = 2.5f;
 
     /// <summary>
-    /// A reference to the attached AudioSource
-    /// </summary>
-    private new AudioSource audio;
-
-    /// <summary>
-    /// The current maximum distance at which this animals noise can be heard.
-    /// </summary>
-    private float audioValue;
-
-    /// <summary>
     /// An index to which waypoint in the path.Vector3Path.
     /// </summary>
     private int currentWaypoint = 0;
 
     /// <summary>
-    /// A reference to
+    /// A reference to AIData component.
     /// </summary>
     private AIData Data;
 
@@ -272,10 +246,7 @@ public class AdvancedAI : MonoBehaviour
             ai.target = Target;
             ai.FindAPath(Target.transform.position);
         }
-        if (AlertSound != null && audio != null)
-        {
-            audio.PlayOneShot(AlertSound);
-        }
+        GetComponent<AudioSource>().Play();
     }
 
     /// <summary>
@@ -340,51 +311,6 @@ public class AdvancedAI : MonoBehaviour
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Alert all the surrounding objects, when the object makes a noise.
-    /// </summary>
-    private void AlertObjects()
-    {
-        if (Type == AnimalType.aggresive)
-        {
-            return;
-        }
-        Collider[] colliders = Physics.OverlapSphere(transform.position, audioValue * audio.maxDistance);
-        foreach (Collider col in colliders)
-        {
-            if (!IsFlockMember(col.gameObject))
-            {
-                continue;
-            }
-            if (col.GetComponent<AdvancedAI>() && col.GetComponent<AdvancedAI>().Size < Size)
-            {
-                col.GetComponent<AdvancedAI>().Alert(col.gameObject, AlertType.Danger);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Used to analyze the sound to find out if it would alert other objects.
-    /// </summary>
-    /// <returns></returns>
-    private float AnalyzeSound()
-    {
-        float max = 0.0f;
-        if (audio.clip != null)
-        {
-            float[] samples = new float[128];
-            audio.GetOutputData(samples, 0);
-            foreach (float f in samples)
-            {
-                if (f > max)
-                {
-                    max = f;
-                }
-            }
-        }
-        return max;
     }
 
     /// <summary>
@@ -512,7 +438,10 @@ public class AdvancedAI : MonoBehaviour
     }
 
     /// <summary>
-    /// Select which method to use on for finding the path, then send a pathRequest to the queue.
+    /// This function selects a way of finding the path based on the master distance, the current
+    /// state of the AI. This is the main function of this script, it handles the AIs behavior. When
+    /// it has found the method it sends it to the GridManager, which then processes it and send it
+    /// back to the path variable in this script.
     /// </summary>
     private void FindPath()
     {
@@ -528,54 +457,52 @@ public class AdvancedAI : MonoBehaviour
             {
                 if (Flying) //If flying is enabled
                 {
-                    if (target = FindClosest())
+                    if (target = FindClosest()) //Check if a target is visible
                     {
-                        if (Type == AnimalType.aggresive)
+                        if (Type == AnimalType.aggresive) //If the animal is aggressive.
                         {
-                            FindAirPath(target.transform.position);
-                        } else if (Type == AnimalType.scared)
+                            FindAirPath(target.transform.position); //Find a path to the target.
+                        }
+                        else if (Type == AnimalType.scared) //If the animal is scared.
                         {
-                            FindAirPath(FindOpposite(target.transform.position));
-
+                            FindAirPath(FindOpposite(target.transform.position)); //Find a path away from the target.
                         }
                     }
-                    if (path == null)
+                    if (path == null) //If there wasn't any target visible.
                     {
-                        FindAirPath();
+                        FindAirPath(); //Find an idle path.
                     }
                     return;
                 }
 
-                target = FindClosest();
-                if (target == null)
+                target = FindClosest(); //See if a target is visible.
+                if (target == null) //If not try smelling for something.
                 {
                     target = Smell();
                 }
 
-                if (Type == AnimalType.aggresive)
+                if (Type == AnimalType.aggresive) //If the animal is aggressive.
                 {
                     if (target != null && 100.0f - Data.Hunger <= target.GetComponent<AdvancedAI>().Size) //If hungry
                     {
-                        FindAPath(target.transform.position);
+                        FindAPath(target.transform.position); //Find a path to the target.
                         return;
                     }
                 }
                 else
                 {
-                    FindAPath(FindOpposite(target.transform.position));
+                    FindAPath(FindOpposite(target.transform.position)); //If it is a scared animal run away from the danger.
                     return;
                 }
 
-                if (AIState == CurrentAIState.Idling)
+                if (AIState == CurrentAIState.Idling) //If the AI state is set to idling.
                 {
-                    if (pt == PathType.none || t)
+                    if (pt == PathType.none || t) //If there weren't any path, or there is a
                     {
+                        float dist = -ViewDistance / 2;
+                        Vector3 GridPos = new Vector3(Random.Range(-dist, dist), 0, Random.Range(-dist, dist));
 
-                        float min = -ViewDistance / 2;
-                        float max = ViewDistance / 2;
-                        Vector3 GridPos = new Vector3(Random.Range(min, max), 0, Random.Range(min, max));
-
-                        if (IsMaster)
+                        if (IsMaster) //If I am the master.
                         {
                             FindAPath(transform.position + GridPos); //Move normally
                         }
@@ -586,68 +513,71 @@ public class AdvancedAI : MonoBehaviour
                     }
                     return;
                 }
-                else if (AIState == CurrentAIState.GoingHome)
+                else if (AIState == CurrentAIState.GoingHome) //If the agent is planning on going home.
                 {
-                    if (pt == PathType.none)
+                    if (pt == PathType.none) //If there wasn't any path.
                     {
-                        FindAPath(Data.Home);
+                        FindAPath(Data.Home); //Find the quickest path home.
                     }
                     return;
                 }
             }
-            else if (pt == PathType.none)
+            else if (pt == PathType.none) //If there is a target and there isn't any path, check if the target is still valid.
             {
                 if (Physics.Linecast(transform.position, target.transform.position)) //If it still is visible.
                 {
-                    FindAPath(target.transform.position);
+                    FindAPath(target.transform.position); //Find a path to the target.
                     return;
                 }
                 else
                 {
-                    target = null;
+                    target = null; //Unset the target if it wasn't valid.
                 }
             }
         }
     }
 
+    /// <summary>
+    /// FixedUpdate
+    /// </summary>
     private void FixedUpdate()
     {
-        if (path == null)
+        if (path == null) //If the path doesn't exist.
         {
             return;
         }
 
-        currentWaypoint = Mathf.Clamp(currentWaypoint, 0, path.Vector3Path.Length-1);
+        currentWaypoint = Mathf.Clamp(currentWaypoint, 0, path.Vector3Path.Length - 1); //Clamp the current waypoint to prevent errors.
 
-        if (Vector3.Distance(transform.position, path.Vector3Path[currentWaypoint]) < 1.0f)
+        if (Vector3.Distance(transform.position, path.Vector3Path[currentWaypoint]) < AttackRange) //If the target is closer than attack range update the current waypoint.
         {
-            currentWaypoint++;
-            if (currentWaypoint >= path.Vector3Path.Length)
+            currentWaypoint++; //Increment the currentWaypoint variable.
+            if (currentWaypoint >= path.Vector3Path.Length) //If the currentWaypoint is equal to the path length end the pathfinding.
             {
-                EndOfPath();
+                EndOfPath(); //Call the end of path function.
                 return;
             }
         }
 
-        if (Flying)
+        if (Flying) //If flying look at 45 degree angle downwards.
         {
             transform.LookAt(path.Vector3Path[currentWaypoint]);
             Vector3 roto = transform.rotation.eulerAngles;
             roto.x = 45;
             transform.rotation = Quaternion.Euler(roto);
         }
-        else
+        else //Else just look at the next waypoint.
         {
             Vector3 rot = path.Vector3Path[currentWaypoint];
             rot.y = transform.position.y;
             transform.LookAt(rot);
         }
 
-        if (RandomAddSpeed)
+        if (RandomAddSpeed) //Add random variable between -1 and 1 to make some variation in the movement.
         {
             transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.fixedDeltaTime * (speed + RandomSpeed));
         }
-        else
+        else //Else move normally.
         {
             transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.fixedDeltaTime * speed);
         }
@@ -680,30 +610,8 @@ public class AdvancedAI : MonoBehaviour
     }
 
     /// <summary>
-    /// An iterator used for making the automated noise.
+    /// Used to draw the path gizmo's.
     /// </summary>
-    /// <returns>Nothing</returns>
-    private IEnumerator NoiseMaker()
-    {
-        if (automatedNoise)
-        {
-            float LastNoise = 0f;
-            float ran = Random.Range(0.0f, 100.0f);
-            while (true)
-            {
-                TillNoise = (Time.realtimeSinceStartup - ran) - LastNoise;
-                if (Time.realtimeSinceStartup - LastNoise > ran)
-                {
-                    audio.clip = AlertSound;
-                    audio.Play();
-                    LastNoise = Time.realtimeSinceStartup;
-                    ran = Random.Range(0.0f, 600.0f);
-                }
-                yield return null;
-            }
-        }
-    }
-
     private void OnDrawGizmos()
     {
         //Path
@@ -727,11 +635,6 @@ public class AdvancedAI : MonoBehaviour
 
         if (GridManager.ShowGizmo)
         {
-            if (audio != null && audioValue != 0f)
-            {
-                Gizmos.color = Color.red;
-                Gizmos.DrawWireSphere(transform.position, audioValue * audio.maxDistance);
-            }
             Color c = Color.green;
 
             if (FindObjectOfType<GridManager>().ShowFlockColor && FlockAnimal)
@@ -742,19 +645,6 @@ public class AdvancedAI : MonoBehaviour
                 Random.seed = se;
             }
 
-            if (!Flying)
-            {
-                //Smelling
-                if (Smell() != null)
-                {
-                    Gizmos.color = Color.red;
-                }
-                else
-                {
-                    Gizmos.color = c;
-                }
-                Gizmos.DrawWireSphere(transform.position - (Wind.windVector3 * SmellDistance), SmellDistance);
-            }
             Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
 
             //Looking
@@ -794,20 +684,9 @@ public class AdvancedAI : MonoBehaviour
     /// <returns></returns>
     private GameObject Smell()
     {
-        Collider[] col = Physics.OverlapSphere(transform.position - (Wind.windVector3 * SmellDistance), SmellDistance);
-        foreach (Collider collider in col)
+        if (GetComponent<Smelling>())
         {
-            if (collider.GetComponent<AdvancedAI>() || collider.tag == "Player")
-            {
-                if (IsFlockMember(collider.gameObject))
-                {
-                    continue;
-                }
-                if (collider.transform != transform)
-                {
-                    return collider.gameObject;
-                }
-            }
+            return GetComponent<Smelling>().Smell();
         }
         return null;
     }
@@ -846,14 +725,10 @@ public class AdvancedAI : MonoBehaviour
 
     private void Start()
     {
-        audio = GetComponent<AudioSource>();
-        audio.maxDistance = NoiseDistance;
-        audio.minDistance = 0.1f;
         RandomSpeed = Random.Range(-2.0f, 2.0f);
 
         Data = GetComponent<AIData>();
         Data.Home = transform.position;
-
 
         Mesh mesh;
         if (FindObjectOfType<SkinnedMeshRenderer>())
@@ -879,7 +754,6 @@ public class AdvancedAI : MonoBehaviour
             InvokeRepeating("FindPath", Random.Range(0.0f, RefreshRate), RefreshRate);
         }
         StartCoroutine(UpdateState()); //Start state updater
-        StartCoroutine(NoiseMaker());
 
         if (master == null)
         {
@@ -890,14 +764,6 @@ public class AdvancedAI : MonoBehaviour
 
     private void Update()
     {
-        if (audio != null)
-        {
-            audioValue = AnalyzeSound();
-            if (audioValue != 0.0f)
-            {
-                AlertObjects();
-            }
-        }
         if (Type == AnimalType.aggresive && target != null && Vector3.Distance(transform.position, target.transform.position) <= AttackRange)
         {
             if (Time.realtimeSinceStartup - LastAttack > 1.0f)
