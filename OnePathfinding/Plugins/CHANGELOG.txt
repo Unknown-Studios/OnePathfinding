@@ -1,0 +1,101 @@
+# Version 1.4.0 (Planetarium)
+	- Removed the need for the movement platform to be a terrain. It can now be a mesh instead.
+	- Fixed wrong named label on the GridManager.
+	- Added Spherical grids
+	- Added new example called Single AI which doesn't have flocking enabled.
+	- Renamed Example scene to Plane.
+	- (AdvancedAI.cs) Added ability to choose a specific grid.
+	- (AdvancedAI.cs) Added option to pause the AI.
+	- (AdvancedAI.cs) You can now control the additional components from the new "Components:" menu.
+	- (AdvancedAI.cs) Moved all gizmos to this file for more universal showing of the gizmos.
+	- (AdvancedAI.cs) Agents is now unable to leave their grid (Plane only)
+	- (AudioScript.cs) Fixed a bug which caused the AudioScript only to alert flock members.
+	- (Flocking.cs) Added flocking as an external component too.
+	- (GridAlign.cs) Added this component to align the agent with the grid.
+	- (GridManager.cs) Improved the overall processing rate of the queue.
+	- (Listening.cs) Fixed NullReferenceException.
+	- (Listening.cs) Moved file to Examples/Scripts as it was part of the AdvancedAI example.
+	- (Pathfinding.cs) Improved performance of NodeFromWorldPos.
+	- (Pathfinding.cs) Removed NearWalkable as it had terrible performance.
+	- (Pathfinding.cs) Removed unused namespace.
+	- (Pathfinding.cs) Temporarily disabled Heap as it has some errors in it.
+	- (Smelling.cs) Fixed NullReferenceException.
+	- (Smelling.cs) Moved file to Examples/Scripts as it was part of the AdvancedAI example.
+	- (Wind.cs) Moved file to Examples/Scripts as it was part of the AdvancedAI example.
+
+# Version 1.3.2 (Separation)
+	- Fixed missing directional light in example scene.
+	- Moved Listen and Smelling features to new components, which can easily be attached. The new components are called Listening & Smelling.
+	- Improved setup tutorial.
+	- Added example to documentation.
+	- Added file types to the CHANGELOG and README files.
+
+# Version 1.3.1 (The cleanup)
+	- Added documentation for missed variables.
+	- (AISpawner.cs) Added variable to set maximum number of active AIs in the scene.
+	- (AdvancedAI.cs) Fixed Flying AI not fleeing combat if set to scared.
+	- (AdvancedAI.cs) Fixed Flocking not working.
+	- (GridManager.cs) Fixed AI was able to have multiple pathrequests queued at a time.
+	- (AdvancedAIEditor.cs) Added new label under information named: "Path State" (Replaced "Has Path")
+	- (GridManager.cs) Reversed the WalkableMask to be UnwalkableMask.
+	- (GridManager.cs) Fixed some errors when drawing the grid when there wasn't any nodes.
+	- (GridManagerEditor.cs) Removed some unused debugging code.
+	- (Wind.cs) Fixed default value for RepeatRate being 0. (Default: 300)
+
+# Version 1.3.0 (The polisher)
+	- Fixed all remaining StackOverflowException
+	- Added Documentation to the website: http://unknown-studios.com/OnePathDocs/
+	- Made every variable in the plugin documented. If I missed one please feel free to contact me. :)
+	- Fixed errors caused by not having the AI tag in the tag-manager. (This tag isn't needed anymore)
+	- Relocated the Example scene to Plugins/OnePathfinding/Examples/
+	- (AdvancedAI.cs) Fixed scared animals not fleeing.
+	- (AdvancedAI.cs) Fixed AI not being persistent enough.
+	- (AdvancedAI.cs) Agents in a flock will move towards the master if he isn't visible.
+	- (AdvancedAI.cs) Fixed Flying AI agents not looking the direction that they are flying.
+	- (GridManager.cs) Fixed bug where A* would continue to search all of the terrain if there wasn't a path between start and end positions.
+	- (GridManager.cs) Center is now called Offset, as it was more of an offset than a center for the grid.
+	- (AntiFly.cs) Fixed Agents able to fall off the terrain.
+	- (AISpawner.cs) Fixed bug which caused some AIs to have the wrong name after being created.
+
+# Version 1.2.1
+	- Added a way more descriptive tutorial on how to install and use.
+	- Added Support, File Description, License and About sections to the TUTORIAL file.
+	- (AdvancedAI.cs) Moved movement to FixedUpdate instead of Update.
+	- (AdvancedAI.cs) Improved performance, to be 0.25-0.5ms faster.
+	- (AdvancedAI.cs) Fixed StackOverflowException occurring after running the example scene for some time.
+
+# Version 1.2.0
+	- (AdvancedAI.cs) Added flying
+	- (AdvancedAI.cs) Removed unused code
+	- Added Flying AI prefab as an example on how to use AdvancedAI
+	- (AdvancedAIEditor.cs) Redesigned to be more organized.
+
+# Version 1.1.3
+	- Renamed the namespace to "OnePathfinding" instead of "PathFinding"
+	- Added Step by step tutorial to package.
+	- Moved flock spawning from AISpawner to the AdvancedAI.
+	- Removed unused code.
+	- Added more advanced finding food state.
+	- Removed regions, as they weren't used for anything.
+	- Added feature for automated noise. (A sound that plays from time to time)
+
+# Version 1.1.2
+	- Fixed two compiler errors when building.
+	- Added Spectator mode to example scene.
+	- Fixed Attacks never occurring when using advanced AI script
+
+# Version 1.1.1
+	- Fixed wrong hierarchy format for plugins.
+
+# Version 1.1.0
+	- Fixed Scared animals not fleeing combat, but engaging it.
+	- Added Audio sensor support.
+	- Added AudioScript.cs which can be attached to external audio sources. (Like exploding objects, cars etc.)
+	- Added support for spawning multiple game-objects from Test.cs script.
+	- Added option to change how many AIs is spawned by Test.cs
+	- Added option on AIData to enable/disable re-spawning.
+	- Added a new example of a scared AI
+	- Improved AntiFly script.
+
+# Version 1.0.0
+	- Initial release

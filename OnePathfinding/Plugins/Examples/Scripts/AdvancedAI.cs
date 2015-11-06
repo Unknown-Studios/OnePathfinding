@@ -27,22 +27,6 @@ public class AdvancedAI : MonoBehaviour
     public float Damage;
 
     /// <summary>
-    /// If the animal is a flock animal or not.
-    /// </summary>
-    public bool FlockAnimal;
-
-    /// <summary>
-    /// An ID used to identify the flock leader and it's members.
-    /// </summary>
-    public int FlockID;
-
-    /// <summary>
-    /// If you want a custom GameObject to be the child in a flock, if you say have a alpha wolf
-    /// with a different model than the rest of the, you would then set this to child's model.
-    /// </summary>
-    public GameObject FlockMember;
-
-    /// <summary>
     /// The height at which a flying AI will fly at.
     /// </summary>
     public float Flyheight = 50.0f;
@@ -53,24 +37,14 @@ public class AdvancedAI : MonoBehaviour
     public bool Flying = false;
 
     /// <summary>
-    /// This is used to easily identify if this AI is the master of it's flock.
+    /// The grids current index.
     /// </summary>
-    public bool IsMaster;
+    public int GridIndex;
 
     /// <summary>
-    /// A reference to the master GameObject. NULL if not in a flock or if this is the leader.
+    /// The currently selected grid.
     /// </summary>
-    public GameObject master;
-
-    /// <summary>
-    /// The minimum size this AI's flock can have.
-    /// </summary>
-    public int maxFlockSize = 3;
-
-    /// <summary>
-    /// The maximum size this AI's flock can have.
-    /// </summary>
-    public int minFlockSize = 2;
+    public GridGraph grid;
 
     /// <summary>
     /// The maximum distance at which this animals noise can be heard.
@@ -99,11 +73,6 @@ public class AdvancedAI : MonoBehaviour
     public float Size;
 
     /// <summary>
-    /// The distance at which this animal can smell at.
-    /// </summary>
-    public float SmellDistance = 5f;
-
-    /// <summary>
     /// The speed at which this animal moves at.
     /// </summary>
     public float speed = 6.0F;
@@ -117,6 +86,8 @@ public class AdvancedAI : MonoBehaviour
     /// The distance at which this animal can see at.
     /// </summary>
     public float ViewDistance = 50.0f;
+
+    private bool _pause;
 
     /// <summary>
     /// The distance from the target before it is a possibility to attack the target.
@@ -149,20 +120,11 @@ public class AdvancedAI : MonoBehaviour
     private float RefreshRate = 2f;
 
     /// <summary>
-    /// Type of alert
-    /// </summary>
-    public enum AlertType
-    {
-        Danger = 0,
-        Target = 1
-    }
-
-    /// <summary>
     /// This animals type, whether it is aggressive, passive(Coming soon) or scared
     /// </summary>
     public enum AnimalType
     {
-        aggresive = 0,
+        aggressive = 0,
         scared = 1
     }
 
@@ -183,6 +145,34 @@ public class AdvancedAI : MonoBehaviour
         none = 0,
         HasPath = 1,
         RequestingPath = 2
+    }
+
+    /// <summary>
+    /// Type of alert
+    /// </summary>
+    public enum AlertType
+    {
+        Danger = 0,
+        Target = 1
+    }
+
+    /// <summary>
+    /// Used to pause the current AI from finding a path.
+    /// </summary>
+    public bool Pause
+    {
+        get
+        {
+            return _pause;
+        }
+        set
+        {
+            _pause = value;
+            if (value)
+            {
+                EndOfPath();
+            }
+        }
     }
 
     /// <summary>
@@ -209,18 +199,28 @@ public class AdvancedAI : MonoBehaviour
         {
             _target = value;
 
-            if (master != null)
+            Flocking flock = GetComponent<Flocking>();
+            if (flock != null && flock.master != null)
             {
-                if (master.GetComponent<AdvancedAI>().isDanger(_target))
+                if (flock.master.GetComponent<AdvancedAI>().isDanger(_target))
                 {
-                    master.GetComponent<AdvancedAI>().Alert(value, AlertType.Target);
+                    flock.master.GetComponent<AdvancedAI>().Alert(value, AlertType.Target);
                 }
                 else
                 {
-                    master.GetComponent<AdvancedAI>().Alert(value, AlertType.Target);
+                    flock.master.GetComponent<AdvancedAI>().Alert(value, AlertType.Target);
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Find a path to a specific vector3.
+    /// </summary>
+    /// <param name="end">The Vector3 location.</param>
+    public void FindAPath(Vector3 end)
+    {
+        GridManager.RequestPath(transform.position, end, OnPathComplete, grid);
     }
 
     /// <summary>
@@ -230,11 +230,16 @@ public class AdvancedAI : MonoBehaviour
     /// <param name="type">If the target is dangerous or not.</param>
     public void Alert(GameObject Target, AlertType type)
     {
-        if (target == Target || Target == null || IsFlockMember(Target)) //Already the current target.
+        Flocking flock = GetComponent<Flocking>();
+        if (!flock)
         {
             return;
         }
-        if (IsMaster)
+        if (target == Target || Target == null || flock.IsFlockMember(Target)) //Already the current target.
+        {
+            return;
+        }
+        if (!flock || flock.IsMaster)
         {
             target = Target;
             FindAPath(Target.transform.position);
@@ -242,74 +247,13 @@ public class AdvancedAI : MonoBehaviour
         }
         else
         {
-            AdvancedAI ai = master.GetComponent<AdvancedAI>();
+            AdvancedAI ai = flock.master.GetComponent<AdvancedAI>();
             ai.target = Target;
             ai.FindAPath(Target.transform.position);
         }
-        GetComponent<AudioSource>().Play();
-    }
-
-    /// <summary>
-    /// Used to determine how far away the master is.
-    /// </summary>
-    /// <returns>The distance to the master. Returns -1 if no master is found.</returns>
-    public float DistanceMaster()
-    {
-        if (master != null && path != null && FlockAnimal)
+        if (GetComponent<AudioSource>())
         {
-            return Vector3.Distance(master.transform.position, path.Destination);
-        }
-        return -1f;
-    }
-
-    /// <summary>
-    /// Find a path to a specific vector3.
-    /// </summary>
-    /// <param name="end">The Vector3 location.</param>
-    public void FindAPath(Vector3 end)
-    {
-        GridManager.RequestPath(transform.position, end, OnPathComplete);
-        pt = PathType.RequestingPath;
-    }
-
-    /// <summary>
-    /// Checks if this GameObject and the subject is from the same flock.
-    /// </summary>
-    /// <param name="subject">The GameObject to test against.</param>
-    /// <returns>Bool, telling whether or not they are from the same flock.</returns>
-    public bool IsFlockMember(GameObject subject)
-    {
-        if (subject.GetComponent<AdvancedAI>())
-        {
-            if (gameObject.transform == subject.transform || subject.GetComponent<AdvancedAI>().FlockID == FlockID)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// Promote a new leader of the flock, this would happen if the leader gets killed.
-    /// </summary>
-    public void PromoteNewLeader()
-    {
-        GameObject f = null;
-
-        foreach (AdvancedAI ai in FindObjectsOfType<AdvancedAI>())
-        {
-            if (IsFlockMember(ai.gameObject))
-            {
-                if (f == null)
-                {
-                    ai.IsMaster = true;
-                    f = ai.gameObject;
-                }
-                else
-                {
-                    ai.master = f;
-                }
-            }
+            GetComponent<AudioSource>().Play();
         }
     }
 
@@ -338,11 +282,6 @@ public class AdvancedAI : MonoBehaviour
         }
     }
 
-    private void Awake()
-    {
-        FlockID = Mathf.RoundToInt(Random.Range(0, 99999999));
-    }
-
     /// <summary>
     /// Called when the end of the path has been reached.
     /// </summary>
@@ -356,34 +295,44 @@ public class AdvancedAI : MonoBehaviour
 
     private void FindAirPath()
     {
-        TerrainData td = Terrain.activeTerrain.terrainData;
-        path = new Path();
+        path = new Path(grid);
         path.Vector3Path = new Vector3[1];
-        float min = -ViewDistance;
-        float max = ViewDistance;
-        Vector3 GridPos = new Vector3(Random.Range(min, max), 0, Random.Range(min, max));
 
-        if (IsMaster || !FlockAnimal)
+        Flocking flock = GetComponent<Flocking>();
+        if (!flock || !flock.IsMaster)
         {
-            path.Vector3Path[0] = transform.position + GridPos;
+            path.Vector3Path[0] = transform.position + (grid.Vector2ToVector3(Random.insideUnitCircle * ViewDistance));
         }
-        else if (master != null)
+        else if (flock.master != null)
         {
-            path.Vector3Path[0] = master.transform.position + GridPos;
+            path.Vector3Path[0] = flock.master.transform.position + (grid.Vector2ToVector3(Random.insideUnitCircle * ViewDistance));
         }
 
-        path.Vector3Path[0].x = Mathf.Clamp(path.Vector3Path[0].x, 0, td.size.x);
-        path.Vector3Path[0].z = Mathf.Clamp(path.Vector3Path[0].z, 0, td.size.z);
+        grid.Clamp(path.Vector3Path[0]);
+        if (grid.gridType == GridGraph.GridType.Plane)
+        {
+            Vector3 start = path.Vector3Path[0];
+            Vector3 end = start;
+            start.y = 0;
+            end.y = 500;
+            RaycastHit ray;
 
-        float normX = path.Vector3Path[0].x / td.size.x;
-        float normY = path.Vector3Path[0].z / td.size.z;
+            if (Physics.Linecast(start, end, out ray))
+            {
+                path.Vector3Path[0].y = ray.point.y + Flyheight + Random.Range(-5f, 5f);
+            }
+        }
+        else
+        {
+            Flyheight = Mathf.Clamp(Flyheight, 0, grid.Radius);
 
-        path.Vector3Path[0].y = td.GetInterpolatedHeight(normX, normY) + Flyheight + Random.Range(-5f, 0f);
+            path.Vector3Path[0] = Random.onUnitSphere * Flyheight;
+        }
     }
 
     private void FindAirPath(Vector3 position)
     {
-        path = new Path();
+        path = new Path(grid);
         path.Vector3Path = new Vector3[1];
 
         path.Vector3Path[0] = position;
@@ -401,7 +350,7 @@ public class AdvancedAI : MonoBehaviour
         {
             if (collider.transform != transform && (collider.tag == "Player" || collider.GetComponent<AdvancedAI>()))
             {
-                if (IsFlockMember(collider.gameObject))
+                if (GetComponent<Flocking>() && GetComponent<Flocking>().IsFlockMember(collider.gameObject))
                 {
                     continue;
                 }
@@ -445,94 +394,96 @@ public class AdvancedAI : MonoBehaviour
     /// </summary>
     private void FindPath()
     {
-        if (Terrain.activeTerrain != null)
+        if (Pause)
         {
-            bool t = false;
-            if (!IsMaster && DistanceMaster() > ViewDistance) //If the agent can't see the master.
+            return;
+        }
+        Flocking flock = GetComponent<Flocking>();
+        grid = GridManager.Grids[Mathf.Clamp(GridIndex, 0, GridManager.Grids.Count - 1)];
+        bool t = false;
+        if (flock && !flock.IsMaster && flock.DistanceMaster() > ViewDistance) //If the agent can't see the master.
+        {
+            target = null;
+            t = true;
+        }
+        if (target == null || Flying)
+        {
+            if (Flying) //If flying is enabled
             {
-                target = null;
-                t = true;
+                if (target = FindClosest()) //Check if a target is visible
+                {
+                    if (Type == AnimalType.aggressive) //If the animal is aggressive.
+                    {
+                        FindAirPath(target.transform.position); //Find a path to the target.
+                    }
+                    else if (Type == AnimalType.scared) //If the animal is scared.
+                    {
+                        FindAirPath(FindOpposite(target.transform.position)); //Find a path away from the target.
+                    }
+                }
+                if (path == null) //If there wasn't any target visible.
+                {
+                    FindAirPath(); //Find an idle path.
+                }
+                return;
             }
-            if (target == null || Flying)
+
+            target = FindClosest(); //See if a target is visible.
+            if (target == null) //If not try smelling for something.
             {
-                if (Flying) //If flying is enabled
-                {
-                    if (target = FindClosest()) //Check if a target is visible
-                    {
-                        if (Type == AnimalType.aggresive) //If the animal is aggressive.
-                        {
-                            FindAirPath(target.transform.position); //Find a path to the target.
-                        }
-                        else if (Type == AnimalType.scared) //If the animal is scared.
-                        {
-                            FindAirPath(FindOpposite(target.transform.position)); //Find a path away from the target.
-                        }
-                    }
-                    if (path == null) //If there wasn't any target visible.
-                    {
-                        FindAirPath(); //Find an idle path.
-                    }
-                    return;
-                }
-
-                target = FindClosest(); //See if a target is visible.
-                if (target == null) //If not try smelling for something.
-                {
-                    target = Smell();
-                }
-
-                if (Type == AnimalType.aggresive) //If the animal is aggressive.
-                {
-                    if (target != null && 100.0f - Data.Hunger <= target.GetComponent<AdvancedAI>().Size) //If hungry
-                    {
-                        FindAPath(target.transform.position); //Find a path to the target.
-                        return;
-                    }
-                }
-                else
-                {
-                    FindAPath(FindOpposite(target.transform.position)); //If it is a scared animal run away from the danger.
-                    return;
-                }
-
-                if (AIState == CurrentAIState.Idling) //If the AI state is set to idling.
-                {
-                    if (pt == PathType.none || t) //If there weren't any path, or there is a
-                    {
-                        float dist = -ViewDistance / 2;
-                        Vector3 GridPos = new Vector3(Random.Range(-dist, dist), 0, Random.Range(-dist, dist));
-
-                        if (IsMaster) //If I am the master.
-                        {
-                            FindAPath(transform.position + GridPos); //Move normally
-                        }
-                        else
-                        {
-                            FindAPath(master.transform.position + GridPos); //Move to the master.
-                        }
-                    }
-                    return;
-                }
-                else if (AIState == CurrentAIState.GoingHome) //If the agent is planning on going home.
-                {
-                    if (pt == PathType.none) //If there wasn't any path.
-                    {
-                        FindAPath(Data.Home); //Find the quickest path home.
-                    }
-                    return;
-                }
+                target = Smell();
             }
-            else if (pt == PathType.none) //If there is a target and there isn't any path, check if the target is still valid.
+
+            if (Type == AnimalType.aggressive) //If the animal is aggressive.
             {
-                if (Physics.Linecast(transform.position, target.transform.position)) //If it still is visible.
+                if (target != null && 100.0f - Data.Hunger <= target.GetComponent<AdvancedAI>().Size) //If hungry
                 {
                     FindAPath(target.transform.position); //Find a path to the target.
                     return;
                 }
-                else
+            }
+            else
+            {
+                FindAPath(FindOpposite(target.transform.position)); //If it is a scared animal run away from the danger.
+                return;
+            }
+
+            if (AIState == CurrentAIState.Idling) //If the AI state is set to idling.
+            {
+                if (pt == PathType.none || t) //If there weren't any path, or there is a
                 {
-                    target = null; //Unset the target if it wasn't valid.
+                    float dist = -ViewDistance / 2;
+
+                    if (!flock || flock.IsMaster) //If I am the master.
+                    {
+                        FindAPath(transform.position + (grid.Vector2ToVector3(Random.insideUnitCircle * dist))); //Move normally
+                    }
+                    else if (flock.master != null)
+                    {
+                        FindAPath(flock.master.transform.position + (grid.Vector2ToVector3(Random.insideUnitCircle * dist))); //Move to the master.
+                    }
                 }
+                return;
+            }
+            else if (AIState == CurrentAIState.GoingHome) //If the agent is planning on going home.
+            {
+                if (pt == PathType.none) //If there wasn't any path.
+                {
+                    FindAPath(Data.Home); //Find the quickest path home.
+                }
+                return;
+            }
+        }
+        else if (pt == PathType.none) //If there is a target and there isn't any path, check if the target is still valid.
+        {
+            if (Physics.Linecast(transform.position, target.transform.position)) //If it still is visible.
+            {
+                FindAPath(target.transform.position); //Find a path to the target.
+                return;
+            }
+            else
+            {
+                target = null; //Unset the target if it wasn't valid.
             }
         }
     }
@@ -542,6 +493,15 @@ public class AdvancedAI : MonoBehaviour
     /// </summary>
     private void FixedUpdate()
     {
+        if (grid.gridType == GridGraph.GridType.Plane)
+        {
+            RaycastHit hit;
+            if (Physics.Linecast(transform.position, transform.position + new Vector3(0, 500, 0), out hit))
+            {
+                hit.point += new Vector3(0, 5, 0);
+                transform.position = hit.point;
+            }
+        }
         if (path == null) //If the path doesn't exist.
         {
             return;
@@ -566,20 +526,26 @@ public class AdvancedAI : MonoBehaviour
             roto.x = 45;
             transform.rotation = Quaternion.Euler(roto);
         }
-        else //Else just look at the next waypoint.
+        else if (!GetComponent<GridAlign>()) //Else just look at the next waypoint.
         {
             Vector3 rot = path.Vector3Path[currentWaypoint];
-            rot.y = transform.position.y;
+            if (grid.gridType == GridGraph.GridType.Plane)
+            {
+                rot.y = transform.position.y;
+            }
             transform.LookAt(rot);
         }
 
-        if (RandomAddSpeed) //Add random variable between -1 and 1 to make some variation in the movement.
+        if (!Pause)
         {
-            transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.fixedDeltaTime * (speed + RandomSpeed));
-        }
-        else //Else move normally.
-        {
-            transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.fixedDeltaTime * speed);
+            if (RandomAddSpeed) //Add random variable between -1 and 1 to make some variation in the movement.
+            {
+                transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.fixedDeltaTime * (speed + RandomSpeed));
+            }
+            else //Else move normally.
+            {
+                transform.position = Vector3.MoveTowards(transform.position, path.Vector3Path[currentWaypoint], Time.fixedDeltaTime * speed);
+            }
         }
     }
 
@@ -597,7 +563,7 @@ public class AdvancedAI : MonoBehaviour
             {
                 return true; //It is a danger.
             }
-            if (Size < targetAI.Size && targetAI.Type == AnimalType.aggresive) //Be scared if the animal is bigger and aggressive
+            if (Size < targetAI.Size && targetAI.Type == AnimalType.aggressive) //Be scared if the animal is bigger and aggressive
             {
                 return true; //It is a danger.
             }
@@ -637,12 +603,26 @@ public class AdvancedAI : MonoBehaviour
         {
             Color c = Color.green;
 
-            if (FindObjectOfType<GridManager>().ShowFlockColor && FlockAnimal)
+            if (GetComponent<Flocking>() && FindObjectOfType<GridManager>().ShowFlockColor)
             {
                 int se = Random.seed;
-                Random.seed = FlockID;
+                Random.seed = GetComponent<Flocking>().FlockID;
                 c = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
                 Random.seed = se;
+            }
+            if (GetComponent<Smelling>() && GetComponent<Smelling>().Smell() != null)
+            {
+                Gizmos.color = Color.red;
+            }
+            else
+            {
+                Gizmos.color = c;
+            }
+            Gizmos.DrawWireSphere(transform.position - (Wind.windVector3 * GetComponent<Smelling>().SmellDistance), GetComponent<Smelling>().SmellDistance);
+
+            if (GetComponent<Listener>() && GetComponent<Listener>().audioValue != 0.0f)
+            {
+                Gizmos.DrawWireSphere(transform.position, GetComponent<Listener>().audioValue * GetComponent<AudioSource>().maxDistance);
             }
 
             Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
@@ -691,38 +671,6 @@ public class AdvancedAI : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// Spawn new member in this flock.
-    /// </summary>
-    private void SpawnFlockMember()
-    {
-        if (FlockAnimal)
-        {
-            int FlockSize = Random.Range(minFlockSize, maxFlockSize);
-
-            int o = 0;
-            while (o < FlockSize)
-            {
-                Vector3 r = new Vector3(Random.Range(-10f, 10f), 0, Random.Range(-10f, 10f));
-                GameObject bo = null;
-                if (FlockMember != null)
-                {
-                    bo = (GameObject)Instantiate(FlockMember, transform.position + r, Quaternion.identity);
-                }
-                else
-                {
-                    bo = (GameObject)Instantiate(gameObject, transform.position + r, Quaternion.identity);
-                }
-                bo.GetComponent<AdvancedAI>().master = gameObject;
-                bo.GetComponent<AdvancedAI>().FlockID = FlockID;
-                bo.name = bo.name.Replace("(Clone)", "");
-
-                bo.transform.SetParent(transform.parent);
-                o++;
-            }
-        }
-    }
-
     private void Start()
     {
         RandomSpeed = Random.Range(-2.0f, 2.0f);
@@ -754,23 +702,40 @@ public class AdvancedAI : MonoBehaviour
             InvokeRepeating("FindPath", Random.Range(0.0f, RefreshRate), RefreshRate);
         }
         StartCoroutine(UpdateState()); //Start state updater
-
-        if (master == null)
-        {
-            IsMaster = true;
-            SpawnFlockMember();
-        }
     }
 
     private void Update()
     {
-        if (Type == AnimalType.aggresive && target != null && Vector3.Distance(transform.position, target.transform.position) <= AttackRange)
+        if (!grid.Scanning && (grid.nodes != null && grid.nodes.Length != 0)) //If not scanning
+        {
+            if (grid.gridType == GridGraph.GridType.Plane) //If grid is a plane.
+            {
+                transform.position = grid.Clamp(transform.position); //Clamp the position to the grid.
+            }
+            else if (Flying) //If sphere and flying
+            {
+                transform.position = (transform.position - grid.offset).normalized * Flyheight;
+            }
+        }
+        if (Type == AnimalType.aggressive && target != null && Vector3.Distance(transform.position, target.transform.position) <= AttackRange)
         {
             if (Time.realtimeSinceStartup - LastAttack > 1.0f)
             {
                 LastAttack = Time.realtimeSinceStartup;
                 Attack(Damage);
             }
+        }
+        if (GridManager.Contains(OnPathComplete))
+        {
+            pt = PathType.RequestingPath;
+        }
+        else if (path == null)
+        {
+            pt = PathType.none;
+        }
+        else
+        {
+            pt = PathType.HasPath;
         }
     }
 

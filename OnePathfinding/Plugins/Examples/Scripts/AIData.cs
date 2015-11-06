@@ -33,7 +33,10 @@ public class AIData : MonoBehaviour
     /// </summary>
     private void KillMe()
     {
-        GetComponent<AdvancedAI>().PromoteNewLeader();
+        if (GetComponent<Flocking>())
+        {
+            GetComponent<Flocking>().PromoteNewLeader();
+        }
         if (Respawn)
         {
             AISpawner.Spawn(gameObject, 1);

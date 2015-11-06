@@ -30,14 +30,14 @@ namespace OnePathfinding
     public class GridGraph
     {
         /// <summary>
+        /// The shape of the grid.
+        /// </summary>
+        public GridType _gridType = GridType.Plane;
+
+        /// <summary>
         /// The distance between each node,
         /// </summary>
         public float _NodeRadius = 2f;
-
-        /// <summary>
-        /// The size of the grid in world-space.
-        /// </summary>
-        public Vector2 _WorldSize = new Vector2(100, 100);
 
         /// <summary>
         /// The maximum angle at which an AI component can walk at.
@@ -52,7 +52,7 @@ namespace OnePathfinding
         /// <summary>
         /// A list of all nodes in the current grid.
         /// </summary>
-        public Node[,] nodes;
+        public Node[,,] nodes;
 
         /// <summary>
         /// A offset for this grid, this is an offset from the GameControllers position.
@@ -60,16 +60,51 @@ namespace OnePathfinding
         public Vector3 offset;
 
         /// <summary>
+        /// The radius of the Sphere (Sphere grid only)
+        /// </summary>
+        public int Radius;
+
+        /// <summary>
         /// A bool to tell you if it is scanning or not.
         /// </summary>
         public bool Scanning;
+
+        /// <summary>
+        /// Whether or not to scan the terrain when loading the scene.
+        /// </summary>
+        public bool ScanOnLoad = true;
 
         /// <summary>
         /// This is very important, it is the layers at which the AI can walk on.
         /// </summary>
         public LayerMask UnWalkableMask;
 
+        /// <summary>
+        /// The size of the grid in world-space.
+        /// </summary>
+        public Vector2 WorldSize = new Vector2(100, 100);
+
         private Vector2 _Size;
+
+        /// <summary>
+        /// The shape of the grid.
+        /// </summary>
+        public enum GridType
+        {
+            Plane = 0,
+            Sphere = 1,
+        }
+
+        /// <summary>
+        /// private Set and Get, public Get
+        /// </summary>
+        public GridType gridType
+        {
+            get
+            {
+                return _gridType;
+            }
+        }
 
         /// <summary>
         /// The maximum number of nodes the grid can have with the current settings
@@ -94,7 +129,6 @@ namespace OnePathfinding
             set
             {
                 _NodeRadius = value;
-                Update();
             }
         }
 
@@ -105,24 +139,21 @@ namespace OnePathfinding
         {
             get
             {
+                Update();
                 return _Size;
             }
         }
 
         /// <summary>
-        /// The world-size of the grid.
+        /// Clamps the given Vector3 to the grid.
         /// </summary>
-        public Vector2 WorldSize
+        /// <param name="v3">The Vector3 to clamp</param>
+        /// <returns>Clamped Vector3</returns>
+        public Vector3 Clamp(Vector3 v3)
         {
-            get
-            {
-                return _WorldSize;
-            }
-            set
-            {
-                _WorldSize = value;
-                Update();
-            }
+            v3.x = Mathf.Clamp(v3.x, offset.x, offset.x + WorldSize.x);
+            v3.z = Mathf.Clamp(v3.z, offset.z, offset.z + WorldSize.y);
+            return v3;
         }
 
         /// <summary>
@@ -151,19 +182,75 @@ namespace OnePathfinding
         {
             List<Node> neighbours = new List<Node>();
 
-            for (int x = -1; x <= 1; x++)
+            if (Scanning || nodes == null || nodes.Length == 0)
             {
-                for (int y = -1; y <= 1; y++)
+                return null;
+            }
+
+            if (gridType == GridType.Plane)
+            {
+                for (int x = -1; x <= 1; x++)
                 {
-                    if (x == 0 && y == 0)
-                        continue;
-
-                    int checkX = node.x + x;
-                    int checkY = node.y + y;
-
-                    if (checkX >= 0 && checkX < Size.x && checkY >= 0 && checkY < Size.y)
+                    for (int y = -1; y <= 1; y++)
                     {
-                        neighbours.Add(nodes[checkX, checkY]);
+                        if (x == 0 && y == 0)
+                            continue;
+
+                        int checkX = node.x + x;
+                        int checkY = node.y + y;
+
+                        if (checkX >= 0 && checkX < Size.x && checkY >= 0 && checkY < Size.y)
+                        {
+                            neighbours.Add(nodes[checkX, checkY, 0]);
+                        }
+                    }
+                }
+            }
+            else if (gridType == GridType.Sphere)
+            {
+                for (int x = -1; x <= 1; x++)
+                {
+                    for (int y = -1; y <= 1; y++)
+                    {
+                        if (x == 0 && y == 0)
+                            continue;
+
+                        //Get the X and Y position for the node to check after.
+                        int checkX = node.x + x;
+                        int checkY = node.y + y;
+
+                        //Clamp the X and Y to fit in the sphere.
+                        if (checkX < 0)
+                        {
+                            checkX = Mathf.RoundToInt(Size.x - 1);
+                        }
+                        else if (checkX >= Size.x)
+                        {
+                            checkX = 0;
+                        }
+                        if (checkY < 0)
+                        {
+                            checkY = Mathf.RoundToInt(Size.x - 1);
+                        }
+                        else if (checkY >= Size.x)
+                        {
+                            checkY = 0;
+                        }
+
+                        //Check for candidates:
+                        Node last = null;
+                        for (int c = 0; c < 6; c++)
+                        {
+                            if (nodes[checkX, checkY, c] != null)
+                            {
+                                if (last == null || Vector3.Distance(node.WorldPosition, nodes[checkX, checkY, c].WorldPosition) < Vector3.Distance(node.WorldPosition, last.WorldPosition)) //All grids for the best candidate to be the neighbour.
+                                {
+                                    last = nodes[checkX, checkY, c];
+                                }
+                            }
+                        }
+                        //Add to neighbor list.
+                        neighbours.Add(last);
                     }
                 }
             }
@@ -187,55 +274,6 @@ namespace OnePathfinding
         }
 
         /// <summary>
-        /// Gets the nearest walkable grid to the given worldPosition.
-        /// </summary>
-        /// <param name="worldPosition">The position at which to find the nearest walkable node.</param>
-        /// <returns>The nearest walkable node.</returns>
-        public Node NearWalkable(Vector3 worldPosition)
-        {
-            if (nodes == null || nodes.Length == 0)
-            {
-                return null;
-            }
-            float percentX = Mathf.Clamp01((worldPosition.x) / WorldSize.x);
-            float percentY = Mathf.Clamp01((worldPosition.z) / WorldSize.y);
-
-            int x = Mathf.RoundToInt((Size.x - 1) * percentX);
-            int y = Mathf.RoundToInt((Size.y - 1) * percentY);
-
-            int MaxDistance = 50;
-            if (x * y < nodes.Length)
-            {
-                for (int X = 0; X < MaxDistance; X++)
-                {
-                    for (int Y = 0; Y < MaxDistance; Y++)
-                    {
-                        int X1 = x + X;
-                        int Y1 = y + Y;
-                        X1 = Mathf.Clamp(X1, 0, nodes.GetLength(0) - 1);
-                        Y1 = Mathf.Clamp(Y1, 0, nodes.GetLength(1) - 1);
-
-                        int X2 = x - X;
-                        int Y2 = y - Y;
-                        X2 = Mathf.Clamp(X2, 0, nodes.GetLength(0) - 1);
-                        Y2 = Mathf.Clamp(Y2, 0, nodes.GetLength(1) - 1);
-
-                        if (nodes[X1, Y1] != null && nodes[X1, Y1].Walkable)
-                        {
-                            return nodes[X1, Y1];
-                        }
-                        else if (nodes[X2, Y2] != null && nodes[X2, Y2].Walkable)
-                        {
-                            return nodes[X2, Y2];
-                        }
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Gets the nearest node from world position.
         /// </summary>
         /// <param name="worldPosition"></param>
@@ -246,35 +284,35 @@ namespace OnePathfinding
             {
                 return null;
             }
-            float percentX = Mathf.Clamp01((worldPosition.x) / WorldSize.x);
-            float percentY = Mathf.Clamp01((worldPosition.z) / WorldSize.y);
-
-            int x = Mathf.RoundToInt((Size.x - 1) * percentX);
-            int y = Mathf.RoundToInt((Size.y - 1) * percentY);
-            if (x * y > nodes.Length)
+            if (gridType == GridType.Plane)
             {
-                return nodes[0, 0];
+                float percentX = Mathf.Clamp01(worldPosition.x / WorldSize.x);
+                float percentY = Mathf.Clamp01(worldPosition.z / WorldSize.y);
+
+                int x = (int)(Mathf.Clamp((Size.x - 1) * percentX, 0, Size.x - 1));
+                int y = (int)(Mathf.Clamp((Size.y - 1) * percentY, 0, Size.y - 1));
+
+                return nodes[x, y, 0];
             }
-            else
+            else if (gridType == GridType.Sphere)
             {
-                return nodes[x, y];
+                Node cur = null;
+                for (int x = 0; x < nodes.GetLength(0); x++)
+                {
+                    for (int y = 0; y < nodes.GetLength(1); y++)
+                    {
+                        for (int i = 0; i < nodes.GetLength(2); i++)
+                        {
+                            if (cur == null || Vector3.Distance(worldPosition, nodes[x, y, i].WorldPosition) < Vector3.Distance(worldPosition, cur.WorldPosition))
+                            {
+                                cur = nodes[x, y, i];
+                            }
+                        }
+                    }
+                }
+                return cur;
             }
-        }
-
-        /// <summary>
-        /// Gets this nodes world position.
-        /// </summary>
-        /// <param name="node"></param>
-        /// <returns>The nodes position in world-space.</returns>
-        public Vector3 NodeToWorldPos(Node node)
-        {
-            Vector3 worldPos = new Vector3();
-
-            worldPos.x = (node.x * (NodeRadius * 2)) - WorldSize.x / 2;
-            worldPos.y = node.height;
-            worldPos.z = (node.y * (NodeRadius * 2)) - WorldSize.y / 2;
-
-            return offset + worldPos;
+            return null;
         }
 
         /// <summary>
@@ -290,10 +328,11 @@ namespace OnePathfinding
         /// </summary>
         /// <param name="start">The first used node</param>
         /// <param name="end">The target node</param>
+        /// <param name="Grid">The grid to retrace the path on.</param>
         /// <returns>Returns a path object.</returns>
-        public Path RetracePath(Node start, Node end)
+        public Path RetracePath(Node start, Node end, GridGraph Grid)
         {
-            Path P = new Path();
+            Path P = new Path(Grid);
             Node Cur = end;
 
             while (Cur != start)
@@ -308,21 +347,95 @@ namespace OnePathfinding
         }
 
         /// <summary>
+        /// Used to scan the node on a sphere
+        /// </summary>
+        /// <param name="x">The X value of the point</param>
+        /// <param name="y">The Y value of the point</param>
+        /// <param name="z">The Z value of the point</param>
+        /// <param name="gridIndex">Which side of the sphere to scan.</param>
+        public void ScanNode(int x, int y, int z, int gridIndex)
+        {
+            if (gridType != GridType.Sphere)
+            {
+                Debug.LogError("You are using the wrong ScanNode function. Use ScanNode(x,y) instead.");
+                return;
+            }
+            if (nodes == null || nodes.GetLength(0) != Size.x + 1 || nodes.GetLength(1) != Size.x + 1)
+            {
+                nodes = new Node[Mathf.RoundToInt(Size.x + 1), Mathf.RoundToInt(Size.x + 1), 6]; //6 because there is 6 sides in a cube.
+            }
+
+            bool Walk = false;
+            RaycastHit hit = new RaycastHit();
+            Vector3 endPos = Vector3.zero;
+
+            Vector3 v = new Vector3(x, y, z) * 2f / (Size.x + 1) - Vector3.one;
+            Vector3 startPos = v.normalized * Radius;
+
+            if (Physics.Linecast(startPos, offset, out hit))
+            {
+                endPos = hit.point;
+                if (Vector3.Angle(v.normalized, hit.normal) < angleLimit)
+                {
+                    if (!Physics.CheckSphere(endPos, (NodeRadius * 2), UnWalkableMask))
+                    {
+                        Walk = true;
+                    }
+                }
+            }
+
+            switch (gridIndex)
+            {
+                case 0: //-Z
+                    nodes[x, y, gridIndex] = new Node(x, y, Walk, endPos);
+                    break;
+
+                case 1: //+X
+                    nodes[y, z, gridIndex] = new Node(y, z, Walk, endPos);
+                    break;
+
+                case 2: //+Z
+                    nodes[x, y, gridIndex] = new Node(x, y, Walk, endPos);
+                    break;
+
+                case 3: //-X
+                    nodes[y, z, gridIndex] = new Node(y, z, Walk, endPos);
+                    break;
+
+                case 4: //+Y
+                    nodes[x, z, gridIndex] = new Node(x, z, Walk, endPos);
+                    break;
+
+                case 5: //-Y
+                    nodes[x, z, gridIndex] = new Node(x, z, Walk, endPos);
+                    break;
+
+                default:
+                    Debug.LogError("GridIndex out of range");
+                    break;
+            }
+        }
+
+        /// <summary>
         /// Scans a specific node in the array.
         /// </summary>
         /// <param name="x">The nodes X position in the array.</param>
         /// <param name="y">The nodes Y position in the array.</param>
         public void ScanNode(int x, int y)
         {
-            if (nodes == null || nodes.Length == 0 || nodes.Length != (Mathf.RoundToInt(Size.x) * Mathf.RoundToInt(Size.y)))
-            {
-                Update();
-                nodes = new Node[Mathf.RoundToInt(Size.x), Mathf.RoundToInt(Size.y)];
-            }
             bool Walk = false;
             RaycastHit hit = new RaycastHit();
+            Vector3 endPos = Vector3.zero;
 
-            Vector3 endPos = offset + Vector2ToVector3(_WorldSize) / 2 + GridToWorld(new Vector3(x, 0, y));
+            if (gridType != GridType.Plane)
+            {
+                return;
+            }
+            if (nodes == null || nodes.Length != (Mathf.RoundToInt(Size.x) * Mathf.RoundToInt(Size.y)))
+            {
+                nodes = new Node[Mathf.RoundToInt(Size.x), Mathf.RoundToInt(Size.y), 1];
+            }
+            endPos = offset + Vector2ToVector3(WorldSize) / 2 + GridToWorld(new Vector3(x, 0, y));
 
             Vector3 startPos = endPos;
             startPos.y = 500;
@@ -338,8 +451,7 @@ namespace OnePathfinding
                     }
                 }
             }
-
-            nodes[x, y] = new Node(x, y, Walk, endPos);
+            nodes[x, y, 0] = new Node(x, y, Walk, endPos);
         }
 
         /// <summary>
@@ -354,8 +466,15 @@ namespace OnePathfinding
 
         private void Update()
         {
-            _Size.x = Mathf.FloorToInt(WorldSize.x / (NodeRadius * 2));
-            _Size.y = Mathf.FloorToInt(WorldSize.y / (NodeRadius * 2));
+            if (gridType == GridType.Plane)
+            {
+                _Size.x = Mathf.FloorToInt(WorldSize.x / (NodeRadius * 2));
+                _Size.y = Mathf.FloorToInt(WorldSize.y / (NodeRadius * 2));
+            }
+            else if (gridType == GridType.Sphere)
+            {
+                _Size.x = WorldSize.x;
+            }
         }
     }
 
@@ -371,7 +490,7 @@ namespace OnePathfinding
         private int currentItemCount;
 
         /// <summary>
-        /// Array of items.
+        /// Array of type T.
         /// </summary>
         private T[] items;
 
@@ -402,6 +521,10 @@ namespace OnePathfinding
         public void Add(T item)
         {
             item.HeapIndex = currentItemCount;
+            if (currentItemCount >= items.Length)
+            {
+                Debug.LogError("An error happened");
+            }
             items[currentItemCount] = item;
             SortUp(item);
             currentItemCount++;
@@ -634,6 +757,11 @@ namespace OnePathfinding
     public class Path
     {
         /// <summary>
+        /// The grid that this path was made on.
+        /// </summary>
+        public GridGraph grid;
+
+        /// <summary>
         /// The list of nodes that was found during the path retracing.
         /// </summary>
         public List<Node> movementPath = new List<Node>();
@@ -647,6 +775,15 @@ namespace OnePathfinding
         /// A list of the worldSpace positions for the nodes.
         /// </summary>
         public Vector3[] Vector3Path = new Vector3[0];
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="Grid">The grid that this path should be generated on.</param>
+        public Path(GridGraph Grid)
+        {
+            grid = Grid;
+        }
 
         /// <summary>
         /// The AIs current destination.
@@ -678,21 +815,31 @@ namespace OnePathfinding
             if (path.Count != 0)
             {
                 waypoints.Add(path[0].WorldPosition);
-                for (int i = 0; i < path.Count; i++)
+                if (grid.gridType == GridGraph.GridType.Plane)
                 {
-                    for (int c = path.Count - 1; c > 1; c--)
+                    for (int i = 0; i < path.Count; i++)
                     {
-                        if (c <= i)
+                        for (int c = path.Count - 1; c > 1; c--)
                         {
-                            waypoints.Add(path[i].WorldPosition);
-                            break;
+                            if (c <= i)
+                            {
+                                waypoints.Add(path[i].WorldPosition);
+                                break;
+                            }
+                            else if (!Physics.Linecast(path[i].WorldPosition, path[c].WorldPosition)) //If there isn't something in the way
+                            {
+                                i = c;
+                                waypoints.Add(path[c].WorldPosition);
+                                break;
+                            }
                         }
-                        else if (!Physics.Linecast(path[i].WorldPosition, path[c].WorldPosition)) //If there isn't something in the way
-                        {
-                            i = c;
-                            waypoints.Add(path[c].WorldPosition);
-                            break;
-                        }
+                    }
+                }
+                else if (grid.gridType == GridGraph.GridType.Sphere)
+                {
+                    for (int i = 0; i < path.Count; i++)
+                    {
+                        waypoints.Add(path[i].WorldPosition);
                     }
                 }
             }

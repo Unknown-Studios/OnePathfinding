@@ -118,7 +118,6 @@ public class GMEditor : Editor
         EditorGUILayout.LabelField("Information:", EditorStyles.boldLabel);
         EditorGUILayout.LabelField(new GUIContent("Queue length: " + GM.queueLength, "This shows the current length of the queue."));
         EditorGUILayout.LabelField(new GUIContent("Currently active AIs: " + FindObjectsOfType<AdvancedAI>().Length.ToString(), "This label shows how many AI components is found in the scene"));
-        EditorGUILayout.LabelField("Scanning: " + GridManager.isScanning);
         GUILayout.Space(10f);
         EditorGUILayout.LabelField("Settings:", EditorStyles.boldLabel);
         GM.DebugLvl = (GridManager.DebugLevel)EditorGUILayout.EnumPopup("Debug Level: ", GM.DebugLvl);
@@ -131,19 +130,28 @@ public class GMEditor : Editor
 
         GUILayout.Space(10f);
         EditorGUILayout.LabelField("Grids:", EditorStyles.boldLabel);
-        
-
         for (int i = 0; i < GM.grid.Count; i++)
         {
             current[i] = EditorGUILayout.Foldout(current[i], GM.grid[i].name);
             if (current[i])
             {
                 GM.grid[i].name = EditorGUILayout.TextField("Name: ", GM.grid[i].name);
-                GM.grid[i].offset = EditorGUILayout.Vector3Field("Offset", GM.grid[i].offset);
-                GM.grid[i].WorldSize = EditorGUILayout.Vector2Field("World Size", GM.grid[i].WorldSize);
-                GM.grid[i].NodeRadius = EditorGUILayout.FloatField("Node Radius", GM.grid[i].NodeRadius);
-                GM.grid[i].angleLimit = EditorGUILayout.IntSlider("Max Angle", GM.grid[i].angleLimit, 0, 90);
-                GM.grid[i].UnWalkableMask = LayerMaskField("Walkable Layer(s):", GM.grid[i].UnWalkableMask, true);
+                GM.grid[i].ScanOnLoad = EditorGUILayout.Toggle("Scan On Load: ", GM.grid[i].ScanOnLoad);
+                GM.grid[i].offset = EditorGUILayout.Vector3Field("Offset: ", GM.grid[i].offset);
+                GM.grid[i]._gridType = (GridGraph.GridType)EditorGUILayout.EnumPopup("Grid Type: ", GM.grid[i]._gridType);
+                if (GM.grid[i].gridType == GridGraph.GridType.Plane)
+                {
+                    GM.grid[i].WorldSize = EditorGUILayout.Vector2Field("World Size: ", GM.grid[i].WorldSize);
+                    GM.grid[i].NodeRadius = EditorGUILayout.FloatField("Node Radius: ", GM.grid[i].NodeRadius);
+                }
+                else if (GM.grid[i].gridType == GridGraph.GridType.Sphere)
+                {
+                    float x = 1f * EditorGUILayout.IntField(new GUIContent("Node Width: ", "The number of nodes per side of the sphere"), Mathf.RoundToInt(GM.grid[i].WorldSize.x));
+                    GM.grid[i].WorldSize = new Vector3(x, 0, 0);
+                    GM.grid[i].Radius = EditorGUILayout.IntField("Radius: ", GM.grid[i].Radius);
+                }
+                GM.grid[i].angleLimit = EditorGUILayout.IntSlider("Max Angle: ", GM.grid[i].angleLimit, 0, 90);
+                GM.grid[i].UnWalkableMask = LayerMaskField("Unwalkable Layer(s):", GM.grid[i].UnWalkableMask, true);
                 GUILayout.Space(10);
                 if (GUILayout.Button("Scan Grid"))
                 {

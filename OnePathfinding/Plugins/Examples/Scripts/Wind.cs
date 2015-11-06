@@ -52,7 +52,10 @@ public class Wind : MonoBehaviour
         }
         set
         {
-            instance._wind = value;
+            if (instance != null)
+            {
+                instance._wind = value;
+            }
         }
     }
 

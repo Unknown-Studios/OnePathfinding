@@ -27,6 +27,11 @@ public class GridManager : MonoBehaviour
     public List<GridGraph> grid;
 
     /// <summary>
+    /// The current queue of PathRequests.
+    /// </summary>
+    public queue pathRequests = new queue();
+
+    /// <summary>
     /// Whether to show the color of each flock or not.
     /// </summary>
     public bool ShowFlockColor;
@@ -50,11 +55,6 @@ public class GridManager : MonoBehaviour
     /// The currently processed pathRequest.
     /// </summary>
     private PathRequest currentPathRequest;
-    
-    /// <summary>
-    /// The current queue of PathRequests.
-    /// </summary>
-    public queue pathRequests = new queue();
 
     /// <summary>
     /// The level at which debugging will happen.
@@ -153,6 +153,20 @@ public class GridManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Check if the queue contains the agent with the Callback callback.
+    /// </summary>
+    /// <param name="callback">The callback to check for,</param>
+    /// <returns>Whether or not it contains the object.</returns>
+    public static bool Contains(Action<Path> callback)
+    {
+        if (instance.pathRequests.Contains(callback.GetHashCode().ToString()) != null)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Get the grid with the given index in the grid list
     /// </summary>
     /// <param name="index">The grids index</param>
@@ -179,19 +193,19 @@ public class GridManager : MonoBehaviour
         {
             grid = Grid;
         }
+        if (grid.Scanning)
+        {
+            return;
+        }
         string Name = callback.GetHashCode().ToString();
         PathRequest newRequest = new PathRequest(pathStart, pathEnd, callback, Name, grid);
         PathRequest contains = instance.pathRequests.Contains(Name);
         if (contains != null)
         {
             instance.pathRequests.Remove(contains);
-            return;
         }
-        else
-        {
-            instance.pathRequests.Enqueue(newRequest);
-            return;
-        }
+        instance.pathRequests.Enqueue(newRequest);
+        instance.Process();
     }
 
     /// <summary>
@@ -209,7 +223,18 @@ public class GridManager : MonoBehaviour
         {
             grid = Grid;
         }
-        instance.StartCoroutine(instance.ScanAGrid(grid));
+        instance.StartCoroutine(instance.ScanA(grid));
+    }
+
+    private void Awake()
+    {
+        foreach (GridGraph g in Grids)
+        {
+            if (g.ScanOnLoad)
+            {
+                ScanGrid(g);
+            }
+        }
     }
 
     /// <summary>
@@ -225,14 +250,18 @@ public class GridManager : MonoBehaviour
         {
             ScanGrid(grid);
         }
+        if (grid.Scanning)
+        {
+            yield break;
+        }
 
-        float max = 300; //Maximum number of nodes, before canceling the path. (So if there isn't a way between 2 points it won't search forever)
+        float max = 300; //Maximum number of nodes, before canceling the path.
 
-        Path p = new Path();
+        Path p = new Path(grid);
         bool pathSuccess = false;
 
-        Node startNode = grid.NearWalkable(startPos);
-        Node targetNode = grid.NearWalkable(targetPos);
+        Node startNode = grid.NodeFromWorldPos(startPos);
+        Node targetNode = grid.NodeFromWorldPos(targetPos);
 
         if (startNode == null || targetNode == null)
         {
@@ -242,14 +271,15 @@ public class GridManager : MonoBehaviour
 
         if (startNode.Walkable && targetNode.Walkable)
         {
-            Heap<Node> open = new Heap<Node>(grid.maxSize);
+            List<Node> open = new List<Node>(grid.maxSize);
             HashSet<Node> closed = new HashSet<Node>();
             open.Add(startNode);
             int cur = 0;
 
             while (open.Count > 0)
             {
-                Node currentNode = open.RemoveFirst();
+                Node currentNode = open[0];
+                open.RemoveAt(0);
                 closed.Add(currentNode);
                 cur++;
 
@@ -285,7 +315,7 @@ public class GridManager : MonoBehaviour
         }
         if (pathSuccess)
         {
-            p = grid.RetracePath(startNode, targetNode);
+            p = grid.RetracePath(startNode, targetNode, grid);
         }
         OnProccesingDone(p, pathSuccess);
     }
@@ -303,10 +333,12 @@ public class GridManager : MonoBehaviour
         {
             if (!Grid.Scanning)
             {
-                if (Grid.nodes == null)
+                if (Grid.nodes == null || Grid.nodes.Length == 0)
                 {
-                    ScanGrid(Grid);
-                    return;
+                    if (Grid.ScanOnLoad)
+                    {
+                        ScanGrid(Grid);
+                    }
                 }
                 if (DebugLvl == DebugLevel.High)
                 {
@@ -321,12 +353,12 @@ public class GridManager : MonoBehaviour
                             if (!n.Walkable)
                             {
                                 Gizmos.color = Color.red;
-                                Gizmos.DrawCube(n.WorldPosition, Vector3.one * (Grid.NodeRadius * 2f));
+                                Gizmos.DrawCube(n.WorldPosition, Vector3.one);
                             }
                             else
                             {
                                 Gizmos.color = Color.blue;
-                                Gizmos.DrawCube(n.WorldPosition, Vector3.one * (Grid.NodeRadius * 2f));
+                                Gizmos.DrawCube(n.WorldPosition, Vector3.one);
                             }
                         }
                     }
@@ -344,14 +376,21 @@ public class GridManager : MonoBehaviour
                             if (!n.Walkable)
                             {
                                 Gizmos.color = Color.red;
-                                Gizmos.DrawCube(n.WorldPosition, Vector3.one * (Grid.NodeRadius * 2f));
+                                Gizmos.DrawCube(n.WorldPosition, Vector3.one);
                             }
                         }
                     }
                 }
+                Gizmos.color = Color.white;
+                if (Grid.gridType == GridGraph.GridType.Plane)
+                {
+                    Gizmos.DrawWireCube((Grid.offset + (Grid.Vector2ToVector3(Grid.WorldSize) / 2)), Grid.Vector2ToVector3(Grid.WorldSize));
+                }
+                else if (Grid.gridType == GridGraph.GridType.Sphere)
+                {
+                    Gizmos.DrawWireSphere(Grid.offset, Grid.Radius);
+                }
             }
-            Gizmos.color = Color.white;
-            Gizmos.DrawWireCube((Grid.offset + (Grid.Vector2ToVector3(Grid.WorldSize) / 2)), Grid.Vector2ToVector3(Grid.WorldSize));
         }
     }
 
@@ -363,21 +402,16 @@ public class GridManager : MonoBehaviour
     private void OnProccesingDone(Path p, bool Success)
     {
         p.Success = Success;
-        p.Update();
+        p.Update(); //Only smooth if the grid is a plane.
         if (p.Vector3Path.Length == 0)
         {
             p.Success = false;
         }
-
-        currentPathRequest.callback(p);
-        currentPathRequest = null;
-    }
-
-    /// <summary>
-    /// Called once every frame.
-    /// </summary>
-    void Update()
-    {
+        if (currentPathRequest != null)
+        {
+            currentPathRequest.callback(p);
+            currentPathRequest = null;
+        }
         Process();
     }
 
@@ -393,21 +427,72 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    private IEnumerator ScanAGrid(GridGraph grid)
+    private IEnumerator ScanA(GridGraph grid)
     {
-        isScanning = true;
-        for (int x = 0; x < grid.Size.x; x++)
+        grid.Scanning = true;
+        Vector3 Size = grid.Size;
+        if (grid.gridType == GridGraph.GridType.Plane)
         {
-            for (int y = 0; y < grid.Size.y; y++)
+            for (int x = 0; x < Size.x; x++)
             {
-                grid.ScanNode(x, y);
+                for (int y = 0; y < Size.y; y++)
+                {
+                    grid.ScanNode(x, y);
+                }
+                if (x % 25 == 0)
+                {
+                    yield return null;
+                }
             }
-            if (x % 25 == 0)
+        }
+        else if (grid.gridType == GridGraph.GridType.Sphere)
+        {
+            //-Z
+            for (int y = 0; y <= Size.x; y++)
             {
-                yield return null;
+                for (int x = 0; x <= Size.x; x++)
+                {
+                    grid.ScanNode(x, y, 0, 0);
+                }
+
+                //+X
+                for (int z = 0; z <= Size.x; z++)
+                {
+                    grid.ScanNode(Mathf.RoundToInt(Size.x), y, z, 1);
+                }
+
+                //+Z
+                for (int x = Mathf.RoundToInt(Size.x); x >= 0; x--)
+                {
+                    grid.ScanNode(x, y, Mathf.RoundToInt(Size.x), 2);
+                }
+
+                //-X
+                for (int z = Mathf.RoundToInt(Size.x); z >= 0; z--)
+                {
+                    grid.ScanNode(0, y, z, 3);
+                }
+            }
+            //+Y
+            for (int z = 0; z <= Size.x; z++)
+            {
+                for (int x = 0; x <= Size.x; x++)
+                {
+                    grid.ScanNode(x, Mathf.RoundToInt(Size.x), z, 4);
+                }
+            }
+            //-Y
+            for (int z = 0; z <= Size.x; z++)
+            {
+                for (int x = 0; x <= Size.x; x++)
+                {
+                    grid.ScanNode(x, 0, z, 5);
+                }
             }
         }
         grid.OnScanDone();
-        isScanning = false;
+        pathRequests = new queue();
+        currentPathRequest = null;
+        grid.Scanning = false;
     }
 }

@@ -34,11 +34,16 @@ public class Listener : MonoBehaviour
     public float TillNoise;
 
     /// <summary>
+    /// The current noise that this AI is making.
+    /// </summary>
+    [HideInInspector]
+    public float audioValue;
+
+    /// <summary>
     /// A reference to the AudioSource.
     /// </summary>
     private new AudioSource audio;
 
-    private float audioValue;
     private AdvancedAI main;
 
     /// <summary>
@@ -49,7 +54,7 @@ public class Listener : MonoBehaviour
         Collider[] colliders = Physics.OverlapSphere(transform.position, audioValue * audio.maxDistance);
         foreach (Collider col in colliders)
         {
-            if (!main.IsFlockMember(col.gameObject))
+            if (GetComponent<Flocking>() && GetComponent<Flocking>().IsFlockMember(col.gameObject))
             {
                 continue;
             }
@@ -103,25 +108,6 @@ public class Listener : MonoBehaviour
                     ran = Random.Range(0.0f, 600.0f); //Create a new TillNoise.
                 }
                 yield return null;
-            }
-        }
-    }
-
-    private void OnDrawGizmos()
-    {
-        if (GridManager.ShowGizmo)
-        {
-            Gizmos.color = Color.green;
-            if (FindObjectOfType<GridManager>().ShowFlockColor && main.FlockAnimal)
-            {
-                int se = Random.seed;
-                Random.seed = main.FlockID;
-                Gizmos.color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
-                Random.seed = se;
-            }
-            if (audioValue != 0.0f)
-            {
-                Gizmos.DrawWireSphere(transform.position, audioValue * audio.maxDistance);
             }
         }
     }
